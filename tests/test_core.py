@@ -1,0 +1,416 @@
+"""Tests for aura core functionality."""
+
+import json
+import tempfile
+from pathlib import Path
+
+import pytest
+
+from aura.schema import ContextPack, Fact, Rule, PackMeta, FactType, Confidence
+from aura.exporters.system_prompt import export_system_prompt
+from aura.exporters.cursorrules import export_cursorrules
+from aura.exporters.claude_memory import export_claude_memory, export_claude_memory_text
+from aura.exporters.chatgpt_instructions import export_chatgpt_instructions
+from aura.importers.chatgpt import import_chatgpt_export
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def dev_pack() -> ContextPack:
+    return ContextPack(
+        name="developer",
+        scope="development",
+        facts=[
+            Fact(key="languages.primary", value=["Python", "TypeScript"], type=FactType.SKILL),
+            Fact(key="frameworks", value=["Next.js", "FastAPI"], type=FactType.SKILL),
+            Fact(key="style.comments", value="Minimal", type=FactType.STYLE),
+        ],
+        rules=[
+            Rule(instruction="Always use TypeScript strict mode", priority=8),
+            Rule(instruction="Prefer functional patterns", priority=5),
+        ],
+        meta=PackMeta(description="Test dev pack"),
+    )
+
+
+@pytest.fixture
+def writer_pack() -> ContextPack:
+    return ContextPack(
+        name="writer",
+        scope="writing",
+        facts=[
+            Fact(key="tone", value="Direct, no fluff", type=FactType.STYLE),
+            Fact(key="audience", value="Technical professionals", type=FactType.CONTEXT),
+        ],
+        rules=[
+            Rule(instruction="Use active voice", priority=6),
+        ],
+        meta=PackMeta(description="Test writer pack"),
+    )
+
+
+@pytest.fixture
+def mock_chatgpt_export(tmp_path) -> Path:
+    conversations = [
+        {
+            "title": "Python help",
+            "mapping": {
+                "m1": {
+                    "message": {
+                        "author": {"role": "user"},
+                        "content": {"parts": ["I use Python and TypeScript daily. Help me with FastAPI."]}
+                    }
+                },
+                "m2": {
+                    "message": {
+                        "author": {"role": "user"},
+                        "content": {"parts": ["I'm a software engineer at Acme Corp."]}
+                    }
+                },
+            }
+        }
+    ]
+    path = tmp_path / "conversations.json"
+    path.write_text(json.dumps(conversations))
+    return path
+
+
+# ---------------------------------------------------------------------------
+# Schema tests
+# ---------------------------------------------------------------------------
+class TestContextPack:
+    def test_create_pack(self, dev_pack):
+        assert dev_pack.name == "developer"
+        assert dev_pack.scope == "development"
+        assert len(dev_pack.facts) == 3
+        assert len(dev_pack.rules) == 2
+
+    def test_to_system_prompt(self, dev_pack):
+        prompt = dev_pack.to_system_prompt()
+        assert "developer" in prompt
+        assert "Python, TypeScript" in prompt
+        assert "TypeScript strict mode" in prompt
+
+    def test_to_cursorrules(self, dev_pack):
+        rules = dev_pack.to_cursorrules()
+        assert "# Aura Context: developer" in rules
+        assert "languages.primary" in rules
+        assert "TypeScript strict mode" in rules
+
+    def test_name_validation(self):
+        # Valid names
+        ContextPack(name="dev", scope="development")
+        ContextPack(name="my-pack", scope="general")
+        ContextPack(name="pack_2", scope="general")
+
+        # Invalid names should fail
+        with pytest.raises(Exception):
+            ContextPack(name="UPPERCASE", scope="general")
+        with pytest.raises(Exception):
+            ContextPack(name="has space", scope="general")
+
+
+# ---------------------------------------------------------------------------
+# Exporter tests
+# ---------------------------------------------------------------------------
+class TestSystemPromptExporter:
+    def test_single_pack(self, dev_pack):
+        result = export_system_prompt([dev_pack])
+        assert "# User Context" in result
+        assert "developer" in result
+        assert "Python, TypeScript" in result
+
+    def test_multi_pack(self, dev_pack, writer_pack):
+        result = export_system_prompt([dev_pack, writer_pack])
+        assert "developer" in result
+        assert "writer" in result
+        assert "Direct, no fluff" in result
+
+    def test_no_header(self, dev_pack):
+        result = export_system_prompt([dev_pack], include_header=False)
+        assert "# User Context" not in result
+        assert "developer" in result
+
+
+class TestCursorrulesExporter:
+    def test_export(self, dev_pack):
+        result = export_cursorrules([dev_pack])
+        assert "Generated by aura" in result
+        assert "languages.primary" in result
+
+    def test_rules_included(self, dev_pack):
+        result = export_cursorrules([dev_pack])
+        assert "TypeScript strict mode" in result
+
+
+class TestClaudeMemoryExporter:
+    def test_export_list(self, dev_pack):
+        statements = export_claude_memory([dev_pack])
+        assert len(statements) > 0
+        assert any("Python, TypeScript" in s for s in statements)
+
+    def test_export_text(self, dev_pack):
+        text = export_claude_memory_text([dev_pack])
+        assert "Claude Memory Export" in text
+        assert "Total statements:" in text
+
+
+class TestChatGPTInstructionsExporter:
+    def test_export_structure(self, dev_pack, writer_pack):
+        result = export_chatgpt_instructions([dev_pack, writer_pack])
+        assert "about_you" in result
+        assert "response_style" in result
+        assert "DEVELOPMENT" in result["about_you"]
+        assert "WRITING" in result["about_you"]
+
+
+# ---------------------------------------------------------------------------
+# Importer tests
+# ---------------------------------------------------------------------------
+class TestChatGPTImporter:
+    def test_import_json(self, mock_chatgpt_export):
+        pack = import_chatgpt_export(mock_chatgpt_export)
+        assert pack.name == "chatgpt-import"
+        assert len(pack.facts) > 0
+        assert "chatgpt" in pack.meta.tags
+
+    def test_import_detects_languages(self, mock_chatgpt_export):
+        pack = import_chatgpt_export(mock_chatgpt_export)
+        lang_facts = [f for f in pack.facts if "language" in f.key]
+        assert len(lang_facts) > 0
+
+    def test_import_custom_name(self, mock_chatgpt_export):
+        pack = import_chatgpt_export(mock_chatgpt_export, pack_name="my-import", scope="dev")
+        assert pack.name == "my-import"
+        assert pack.scope == "dev"
+
+    def test_import_nonexistent_file(self):
+        with pytest.raises(FileNotFoundError):
+            import_chatgpt_export("/nonexistent/path.json")
+
+    def test_import_wrong_format(self, tmp_path):
+        bad_file = tmp_path / "bad.txt"
+        bad_file.write_text("not json")
+        with pytest.raises(ValueError):
+            import_chatgpt_export(bad_file)
+
+
+# ---------------------------------------------------------------------------
+# Pack manager tests
+# ---------------------------------------------------------------------------
+class TestPackManager:
+    def test_init_and_save(self, tmp_path, monkeypatch, dev_pack):
+        from aura import pack as pack_module
+        monkeypatch.setattr(pack_module, "get_aura_home", lambda: tmp_path / ".aura")
+        monkeypatch.setattr(pack_module, "get_packs_dir", lambda: tmp_path / ".aura" / "packs")
+
+        pack_module.init_aura()
+        assert (tmp_path / ".aura" / "packs").exists()
+
+        path = pack_module.save_pack(dev_pack)
+        assert Path(path).exists()
+
+        loaded = pack_module.load_pack("developer")
+        assert loaded.name == "developer"
+        assert len(loaded.facts) == 3
+        assert len(loaded.rules) == 2
+
+    def test_list_packs(self, tmp_path, monkeypatch, dev_pack, writer_pack):
+        from aura import pack as pack_module
+        monkeypatch.setattr(pack_module, "get_aura_home", lambda: tmp_path / ".aura")
+        monkeypatch.setattr(pack_module, "get_packs_dir", lambda: tmp_path / ".aura" / "packs")
+
+        pack_module.init_aura()
+        pack_module.save_pack(dev_pack)
+        pack_module.save_pack(writer_pack)
+
+        packs = pack_module.list_packs()
+        assert len(packs) == 2
+        names = {p.name for p in packs}
+        assert "developer" in names
+        assert "writer" in names
+
+    def test_delete_pack(self, tmp_path, monkeypatch, dev_pack):
+        from aura import pack as pack_module
+        monkeypatch.setattr(pack_module, "get_aura_home", lambda: tmp_path / ".aura")
+        monkeypatch.setattr(pack_module, "get_packs_dir", lambda: tmp_path / ".aura" / "packs")
+
+        pack_module.init_aura()
+        pack_module.save_pack(dev_pack)
+        assert pack_module.pack_exists("developer")
+
+        pack_module.delete_pack("developer")
+        assert not pack_module.pack_exists("developer")
+
+    def test_create_from_template(self):
+        from aura.pack import create_from_template
+
+        pack = create_from_template("developer")
+        assert pack.name == "developer"
+        assert pack.scope == "development"
+        assert len(pack.facts) > 0
+        assert len(pack.rules) > 0
+
+    def test_create_from_unknown_template(self):
+        from aura.pack import create_from_template
+
+        with pytest.raises(ValueError, match="Unknown template"):
+            create_from_template("nonexistent")
+
+
+# ---------------------------------------------------------------------------
+# Diff tests
+# ---------------------------------------------------------------------------
+class TestDiff:
+    def test_identical_packs(self, dev_pack):
+        from aura.diff import diff_packs
+        result = diff_packs(dev_pack, dev_pack)
+        assert not result.has_differences
+        assert len(result.matching) == len(dev_pack.facts)
+
+    def test_different_packs(self, dev_pack, writer_pack):
+        from aura.diff import diff_packs
+        result = diff_packs(dev_pack, writer_pack)
+        assert result.has_differences
+        assert len(result.only_in_source) > 0
+        assert len(result.only_in_target) > 0
+
+    def test_conflicting_facts(self):
+        from aura.diff import diff_packs
+        pack_a = ContextPack(
+            name="a", scope="test",
+            facts=[Fact(key="language", value="Python")],
+        )
+        pack_b = ContextPack(
+            name="b", scope="test",
+            facts=[Fact(key="language", value="Rust")],
+        )
+        result = diff_packs(pack_a, pack_b)
+        assert len(result.conflicts) == 1
+        assert result.conflicts[0][0].value == "Python"
+        assert result.conflicts[0][1].value == "Rust"
+
+    def test_format_diff(self, dev_pack, writer_pack):
+        from aura.diff import diff_packs, format_diff
+        result = diff_packs(dev_pack, writer_pack)
+        text = format_diff(result, "local", "platform")
+        assert "local" in text
+        assert "platform" in text
+
+    def test_summary(self):
+        from aura.diff import DiffResult
+        result = DiffResult(
+            matching=[Fact(key="a", value="1")],
+            only_in_source=[Fact(key="b", value="2")],
+        )
+        assert "1 matching" in result.summary
+        assert "1 only in source" in result.summary
+
+
+# ---------------------------------------------------------------------------
+# MCP Server tests
+# ---------------------------------------------------------------------------
+class TestMCPServer:
+    def test_initialize(self):
+        from aura.mcp_server import handle_jsonrpc
+        r = handle_jsonrpc({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+        assert r["result"]["protocolVersion"]
+        assert r["result"]["serverInfo"]["name"] == "aura"
+
+    def test_resources_list(self):
+        from aura.mcp_server import handle_jsonrpc
+        r = handle_jsonrpc({"jsonrpc": "2.0", "id": 2, "method": "resources/list", "params": {}})
+        resources = r["result"]["resources"]
+        assert len(resources) > 0
+        uris = [res["uri"] for res in resources]
+        assert "aura://context/full" in uris
+
+    def test_tools_list(self):
+        from aura.mcp_server import handle_jsonrpc
+        r = handle_jsonrpc({"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": {}})
+        tools = r["result"]["tools"]
+        tool_names = [t["name"] for t in tools]
+        assert "search_context" in tool_names
+        assert "get_context" in tool_names
+        assert "get_all_context" in tool_names
+
+    def test_search_context(self):
+        from aura.mcp_server import handle_jsonrpc
+        r = handle_jsonrpc({
+            "jsonrpc": "2.0", "id": 4,
+            "method": "tools/call",
+            "params": {"name": "search_context", "arguments": {"query": "typescript"}}
+        })
+        text = r["result"]["content"][0]["text"]
+        assert "TypeScript" in text or "No context found" in text
+
+    def test_unknown_method(self):
+        from aura.mcp_server import handle_jsonrpc
+        r = handle_jsonrpc({"jsonrpc": "2.0", "id": 99, "method": "fake/method", "params": {}})
+        assert "error" in r
+        assert r["error"]["code"] == -32601
+
+    def test_ping(self):
+        from aura.mcp_server import handle_jsonrpc
+        r = handle_jsonrpc({"jsonrpc": "2.0", "id": 5, "method": "ping", "params": {}})
+        assert r["result"] == {}
+
+
+# ---------------------------------------------------------------------------
+# Extractor tests
+# ---------------------------------------------------------------------------
+class TestExtractor:
+    def test_parse_valid_response(self):
+        from aura.extractor import Extractor
+        response = '{"facts": [{"key": "role", "value": "engineer", "type": "identity", "confidence": "high"}], "rules": [{"instruction": "Use TypeScript", "priority": 8}]}'
+        result = Extractor._parse_response(response)
+        assert result is not None
+        assert len(result["facts"]) == 1
+        assert result["facts"][0]["key"] == "role"
+        assert len(result["rules"]) == 1
+
+    def test_parse_with_markdown_fences(self):
+        from aura.extractor import Extractor
+        response = '```json\n{"facts": [{"key": "lang", "value": "Python"}], "rules": []}\n```'
+        result = Extractor._parse_response(response)
+        assert result is not None
+        assert len(result["facts"]) == 1
+
+    def test_parse_invalid_response(self):
+        from aura.extractor import Extractor
+        result = Extractor._parse_response("this is not json at all")
+        assert result is None
+
+    def test_merge_facts(self):
+        from aura.extractor import Extractor
+        facts = [
+            {"key": "lang", "value": "Python", "confidence": "low"},
+            {"key": "lang", "value": "Python", "confidence": "high"},
+            {"key": "role", "value": "engineer", "confidence": "high"},
+        ]
+        merged = Extractor._merge_facts(facts)
+        assert len(merged) == 2
+        lang_fact = [f for f in merged if f["key"] == "lang"][0]
+        assert lang_fact["confidence"] == "high"
+
+    def test_merge_facts_list_values(self):
+        from aura.extractor import Extractor
+        facts = [
+            {"key": "langs", "value": ["Python", "JS"], "confidence": "medium"},
+            {"key": "langs", "value": ["JS", "Rust"], "confidence": "medium"},
+        ]
+        merged = Extractor._merge_facts(facts)
+        assert len(merged) == 1
+        assert set(merged[0]["value"]) == {"Python", "JS", "Rust"}
+
+    def test_merge_rules_dedup(self):
+        from aura.extractor import Extractor
+        rules = [
+            {"instruction": "Use TypeScript strict mode", "priority": 8},
+            {"instruction": "Use TypeScript strict mode!", "priority": 7},
+            {"instruction": "Write tests for all functions", "priority": 5},
+        ]
+        merged = Extractor._merge_rules(rules)
+        assert len(merged) == 2
