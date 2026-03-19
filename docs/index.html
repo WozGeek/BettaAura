@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>aura — Your portable AI context</title>
+<title>aura — Your AI tools don't talk to each other. We fix that.</title>
+<meta name="description" content="Open-source CLI that scans your machine, builds your AI identity, and serves it to every tool via MCP. Define yourself once. Every AI knows you.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -20,6 +21,7 @@
   --accent-dim: rgba(180, 160, 255, 0.12);
   --accent-glow: rgba(180, 160, 255, 0.06);
   --green: #7dd3a0;
+  --green-dim: rgba(125, 211, 160, 0.10);
   --yellow: #e8c868;
   --red: #e87070;
   --cyan: #70c8e8;
@@ -38,7 +40,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ─── Noise texture overlay ─── */
 body::before {
   content: '';
   position: fixed;
@@ -51,56 +52,34 @@ body::before {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
+.container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
 
 /* ─── NAV ─── */
 nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   padding: 16px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: flex; justify-content: space-between; align-items: center;
   background: rgba(5, 5, 7, 0.8);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
-
 .nav-brand {
   font-family: 'Instrument Serif', serif;
-  font-size: 22px;
-  font-style: italic;
-  color: var(--accent);
-  letter-spacing: -0.02em;
+  font-size: 22px; font-style: italic;
+  color: var(--accent); letter-spacing: -0.02em;
 }
-
 .nav-links { display: flex; gap: 28px; align-items: center; }
 .nav-links a {
-  color: var(--text-dim);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: color 0.2s;
-  letter-spacing: 0.02em;
+  color: var(--text-dim); font-size: 13px; font-weight: 500;
+  text-decoration: none; transition: color 0.2s; letter-spacing: 0.02em;
 }
 .nav-links a:hover { color: var(--text); text-decoration: none; }
-
 .nav-cta {
   background: var(--accent-dim) !important;
   color: var(--accent) !important;
-  padding: 7px 16px;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px !important;
-  border: 1px solid rgba(180, 160, 255, 0.15);
-  transition: all 0.2s;
+  padding: 7px 16px; border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px !important;
+  border: 1px solid rgba(180, 160, 255, 0.15); transition: all 0.2s;
 }
 .nav-cta:hover {
   background: rgba(180, 160, 255, 0.18) !important;
@@ -109,273 +88,186 @@ nav {
 
 /* ─── HERO ─── */
 .hero {
-  padding: 180px 0 100px;
-  text-align: center;
-  position: relative;
+  padding: 160px 0 60px; text-align: center; position: relative;
 }
-
-/* Glow behind hero */
 .hero::before {
-  content: '';
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 600px;
-  height: 400px;
+  content: ''; position: absolute; top: 80px; left: 50%;
+  transform: translateX(-50%); width: 600px; height: 400px;
   background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%);
   pointer-events: none;
 }
-
 .hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 32px;
-  font-weight: 500;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 100px;
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 32px; font-weight: 500;
 }
 .hero-badge span { color: var(--green); }
-
 .hero h1 {
   font-family: 'Instrument Serif', serif;
-  font-size: clamp(48px, 7vw, 80px);
-  font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  margin-bottom: 24px;
-  color: var(--text);
+  font-size: clamp(42px, 7vw, 76px);
+  font-weight: 400; line-height: 1.05;
+  letter-spacing: -0.03em; margin-bottom: 24px;
 }
-
-.hero h1 em {
-  font-style: italic;
-  color: var(--accent);
-}
-
+.hero h1 em { font-style: italic; color: var(--accent); }
 .hero-sub {
-  font-size: 18px;
-  color: var(--text-dim);
-  max-width: 540px;
-  margin: 0 auto 48px;
-  line-height: 1.7;
-  font-weight: 300;
+  font-size: 17px; color: var(--text-dim);
+  max-width: 520px; margin: 0 auto 44px;
+  line-height: 1.75; font-weight: 300;
 }
-
 .hero-install {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  padding: 14px 24px;
-  border-radius: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 14px 24px; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  color: var(--text); cursor: pointer; transition: all 0.2s;
 }
 .hero-install:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-elevated);
+  border-color: var(--border-hover); background: var(--bg-elevated);
 }
 .hero-install .prompt { color: var(--accent); }
 .hero-install .copy-hint {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  color: var(--text-muted);
-  padding: 3px 8px;
-  background: var(--bg);
-  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif; font-size: 11px;
+  color: var(--text-muted); padding: 3px 8px;
+  background: var(--bg); border-radius: 4px;
+  transition: color 0.2s;
 }
 
-/* ─── PROBLEM ─── */
-.problem {
-  padding: 80px 0;
-  border-top: 1px solid var(--border);
+/* ─── DEMO TERMINAL ─── */
+.demo-section { padding: 50px 0 80px; }
+.demo-window {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+  max-width: 660px; margin: 0 auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
 }
-
-.problem-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: center;
-}
-
-.problem h2 {
-  font-family: 'Instrument Serif', serif;
-  font-size: 36px;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  margin-bottom: 20px;
-}
-
-.problem p {
-  color: var(--text-dim);
-  font-size: 15px;
-  margin-bottom: 12px;
-}
-
-.problem-visual {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  overflow: hidden;
-}
-
-.platform-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 0;
+.demo-titlebar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 12px 16px; background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
 }
+.demo-dot { width: 10px; height: 10px; border-radius: 50%; }
+.demo-dot:nth-child(1) { background: var(--red); opacity: 0.6; }
+.demo-dot:nth-child(2) { background: var(--yellow); opacity: 0.6; }
+.demo-dot:nth-child(3) { background: var(--green); opacity: 0.6; }
+.demo-title {
+  margin-left: 12px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--text-muted);
+}
+.demo-body {
+  padding: 20px 22px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; line-height: 1.85; color: var(--text-dim);
+  white-space: pre; overflow-x: auto;
+}
+.demo-body .p { color: var(--accent); }
+.demo-body .c { color: var(--green); }
+.demo-body .h { color: var(--text); }
+.demo-body .a { color: var(--accent); }
+.demo-body .d { color: var(--text-muted); }
+
+/* ─── PROBLEM ─── */
+.problem { padding: 80px 0; border-top: 1px solid var(--border); }
+.problem-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; align-items: center;
+}
+.problem h2 {
+  font-family: 'Instrument Serif', serif; font-size: 36px;
+  line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 20px;
+}
+.problem p { color: var(--text-dim); font-size: 15px; margin-bottom: 12px; }
+.problem-tagline {
+  color: var(--accent) !important; font-weight: 500 !important; margin-top: 20px !important;
+}
+.problem-visual {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.platform-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
 .platform-row:last-child { border-bottom: none; }
-.platform-name { color: var(--text-dim); width: 80px; }
-.platform-bar {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--accent-dim);
+.platform-name { color: var(--text-dim); width: 80px; font-weight: 500; }
+.platform-bar { height: 6px; border-radius: 3px; }
+.platform-label { color: var(--text-muted); font-size: 10px; flex-shrink: 0; }
+.problem-footer {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--border); text-align: center;
 }
-.platform-label {
-  color: var(--text-muted);
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-/* ─── HOW IT WORKS ─── */
-.how {
-  padding: 80px 0;
-  border-top: 1px solid var(--border);
+.problem-footer span {
+  color: var(--text-muted); font-size: 11px; font-style: italic;
 }
 
+/* ─── HOW ─── */
+.how { padding: 80px 0; border-top: 1px solid var(--border); }
+.section-label {
+  text-align: center; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 10px;
+}
 .how h2 {
-  font-family: 'Instrument Serif', serif;
-  font-size: 36px;
-  letter-spacing: -0.02em;
-  margin-bottom: 48px;
-  text-align: center;
+  font-family: 'Instrument Serif', serif; font-size: 36px;
+  letter-spacing: -0.02em; margin-bottom: 48px; text-align: center;
 }
-
 .steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
 }
-
 .step {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 28px;
-  transition: border-color 0.3s;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px; transition: border-color 0.3s;
 }
 .step:hover { border-color: var(--border-hover); }
-
 .step-num {
-  font-family: 'Instrument Serif', serif;
-  font-size: 32px;
-  color: var(--accent);
-  margin-bottom: 12px;
-  font-style: italic;
+  font-family: 'Instrument Serif', serif; font-size: 32px;
+  color: var(--accent); margin-bottom: 12px; font-style: italic; line-height: 1;
 }
-
-.step h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.step p {
-  font-size: 13px;
-  color: var(--text-dim);
-  line-height: 1.7;
-}
-
+.step h3 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.step p { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
 .step code {
-  display: block;
-  margin-top: 14px;
-  background: var(--bg);
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11.5px;
-  color: var(--text-dim);
-  border: 1px solid var(--border);
-  white-space: pre;
-  overflow-x: auto;
+  display: block; margin-top: 14px; background: var(--bg);
+  padding: 10px 14px; border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+  color: var(--text-dim); border: 1px solid var(--border);
+  white-space: pre; overflow-x: auto; line-height: 1.7;
 }
 .step code .cmd { color: var(--green); }
 .step code .flag { color: var(--yellow); }
 .step code .arg { color: var(--cyan); }
+.step code .cmt { color: var(--text-muted); }
 
-/* ─── CODE DEMO ─── */
-.demo {
-  padding: 80px 0;
-  border-top: 1px solid var(--border);
+/* ─── YAML DEMO ─── */
+.yaml-demo { padding: 80px 0; border-top: 1px solid var(--border); }
+.yaml-demo h2 {
+  font-family: 'Instrument Serif', serif; font-size: 36px;
+  letter-spacing: -0.02em; margin-bottom: 12px; text-align: center;
 }
-
-.demo h2 {
-  font-family: 'Instrument Serif', serif;
-  font-size: 36px;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-  text-align: center;
+.yaml-sub {
+  text-align: center; color: var(--text-dim);
+  margin-bottom: 40px; font-size: 15px;
 }
-
-.demo-sub {
-  text-align: center;
-  color: var(--text-dim);
-  margin-bottom: 40px;
-  font-size: 15px;
-}
-
 .code-window {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  max-width: 700px;
-  margin: 0 auto;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; max-width: 660px; margin: 0 auto;
 }
-
 .code-titlebar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: var(--bg-elevated);
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
 }
-.code-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--text-muted);
-}
+.code-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-muted); }
 .code-dot:nth-child(1) { background: var(--red); opacity: 0.6; }
 .code-dot:nth-child(2) { background: var(--yellow); opacity: 0.6; }
 .code-dot:nth-child(3) { background: var(--green); opacity: 0.6; }
 .code-filename {
-  margin-left: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: var(--text-dim);
+  margin-left: 12px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--text-dim);
 }
-
 .code-body {
-  padding: 20px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12.5px;
-  line-height: 1.8;
-  overflow-x: auto;
+  padding: 20px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; line-height: 1.8; overflow-x: auto;
 }
 .code-body .kw { color: var(--accent); }
 .code-body .str { color: var(--green); }
@@ -384,194 +276,101 @@ nav {
 .code-body .cmt { color: var(--text-muted); }
 
 /* ─── FORMATS ─── */
-.formats {
-  padding: 80px 0;
-  border-top: 1px solid var(--border);
-}
-
+.formats { padding: 80px 0; border-top: 1px solid var(--border); }
 .formats h2 {
-  font-family: 'Instrument Serif', serif;
-  font-size: 36px;
-  letter-spacing: -0.02em;
-  margin-bottom: 40px;
-  text-align: center;
+  font-family: 'Instrument Serif', serif; font-size: 36px;
+  letter-spacing: -0.02em; margin-bottom: 40px; text-align: center;
 }
-
 .format-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
 }
-
 .format-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 24px 20px;
-  text-align: center;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px 20px; text-align: center;
   transition: all 0.3s;
 }
-.format-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-}
+.format-card:hover { border-color: var(--accent); transform: translateY(-2px); }
 .format-icon {
-  font-size: 28px;
-  margin-bottom: 12px;
-  display: block;
+  width: 44px; height: 44px; display: flex; align-items: center;
+  justify-content: center; margin: 0 auto 12px;
+  background: var(--accent-dim); border-radius: 10px;
+  font-size: 18px; color: var(--accent);
 }
-.format-name {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 6px;
-}
+.format-name { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
 .format-flag {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  color: var(--text-muted);
-  background: var(--bg);
-  padding: 3px 8px;
-  border-radius: 4px;
-  display: inline-block;
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  color: var(--text-muted); background: var(--bg);
+  padding: 3px 8px; border-radius: 4px; display: inline-block;
 }
 
 /* ─── MCP ─── */
-.mcp-section {
-  padding: 80px 0;
-  border-top: 1px solid var(--border);
-}
-
+.mcp-section { padding: 80px 0; border-top: 1px solid var(--border); }
 .mcp-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: start;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 48px; align-items: start;
 }
-
 .mcp-content h2 {
-  font-family: 'Instrument Serif', serif;
-  font-size: 36px;
-  letter-spacing: -0.02em;
-  margin-bottom: 16px;
+  font-family: 'Instrument Serif', serif; font-size: 36px;
+  letter-spacing: -0.02em; margin-bottom: 16px;
 }
-
-.mcp-content h2 em {
-  font-style: italic;
-  color: var(--accent);
-}
-
+.mcp-content h2 em { font-style: italic; color: var(--accent); }
 .mcp-content p {
-  color: var(--text-dim);
-  font-size: 15px;
-  margin-bottom: 12px;
-  line-height: 1.7;
+  color: var(--text-dim); font-size: 15px; margin-bottom: 12px; line-height: 1.7;
 }
-
 .mcp-config {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
 }
-
+.mcp-config + .mcp-config { margin-top: 16px; }
 .mcp-config-title {
-  padding: 12px 16px;
-  background: var(--bg-elevated);
+  padding: 12px 16px; background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: var(--text-dim);
+  font-size: 12px; color: var(--text-dim);
 }
-
 .mcp-config pre {
-  padding: 16px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  line-height: 1.8;
-  color: var(--text-dim);
-  overflow-x: auto;
+  padding: 16px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; line-height: 1.8;
+  color: var(--text-dim); overflow-x: auto;
 }
 
 /* ─── CTA ─── */
-.cta {
-  padding: 100px 0;
-  border-top: 1px solid var(--border);
-  text-align: center;
-}
-
+.cta { padding: 100px 0; border-top: 1px solid var(--border); text-align: center; }
 .cta h2 {
   font-family: 'Instrument Serif', serif;
   font-size: clamp(36px, 5vw, 52px);
-  letter-spacing: -0.02em;
-  margin-bottom: 20px;
+  letter-spacing: -0.02em; margin-bottom: 20px;
 }
 .cta h2 em { font-style: italic; color: var(--accent); }
-
 .cta p {
-  color: var(--text-dim);
-  font-size: 16px;
-  max-width: 480px;
-  margin: 0 auto 36px;
+  color: var(--text-dim); font-size: 16px;
+  max-width: 480px; margin: 0 auto 36px;
 }
-
-.cta-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
+.cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  background: var(--accent);
-  color: var(--bg);
-  font-weight: 600;
-  font-size: 14px;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; background: var(--accent); color: var(--bg);
+  font-weight: 600; font-size: 14px; border-radius: 8px;
+  text-decoration: none; transition: all 0.2s;
 }
 .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); text-decoration: none; }
-
 .btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  background: var(--bg-card);
-  color: var(--text);
-  font-weight: 500;
-  font-size: 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  text-decoration: none;
-  transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 28px; background: var(--bg-card); color: var(--text);
+  font-weight: 500; font-size: 14px; border-radius: 8px;
+  border: 1px solid var(--border); text-decoration: none; transition: all 0.2s;
 }
-.btn-secondary:hover { border-color: var(--border-hover); text-decoration: none; }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
 
 /* ─── FOOTER ─── */
 footer {
-  padding: 40px 0;
-  border-top: 1px solid var(--border);
-  text-align: center;
+  padding: 40px 0; border-top: 1px solid var(--border); text-align: center;
 }
-
 .footer-brand {
-  font-family: 'Instrument Serif', serif;
-  font-style: italic;
-  color: var(--accent);
-  font-size: 18px;
-  margin-bottom: 8px;
+  font-family: 'Instrument Serif', serif; font-style: italic;
+  color: var(--accent); font-size: 18px; margin-bottom: 8px;
 }
-
-footer p {
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
+footer p { color: var(--text-muted); font-size: 13px; }
 footer a { color: var(--text-dim); }
 
 /* ─── RESPONSIVE ─── */
@@ -579,9 +378,18 @@ footer a { color: var(--text-dim); }
   .problem-grid, .mcp-content { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; }
   .format-grid { grid-template-columns: repeat(2, 1fr); }
-  .hero { padding: 140px 0 60px; }
+  .hero { padding: 130px 0 40px; }
+  .hero h1 { font-size: 36px; }
   nav { padding: 12px 16px; }
   .nav-links a:not(.nav-cta) { display: none; }
+  .problem h2, .how h2, .formats h2, .mcp-content h2, .yaml-demo h2 { font-size: 28px; }
+  .hero-install { font-size: 12px; padding: 12px 18px; }
+  .cta { padding: 70px 0; }
+}
+@media (max-width: 420px) {
+  .format-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 30px; }
+  .container { padding: 0 16px; }
 }
 
 /* ─── ANIMATIONS ─── */
@@ -589,7 +397,6 @@ footer a { color: var(--text-dim); }
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .hero h1, .hero-sub, .hero-install, .hero-badge {
   animation: fadeUp 0.6s ease-out both;
 }
@@ -597,6 +404,7 @@ footer a { color: var(--text-dim); }
 .hero h1 { animation-delay: 0.1s; }
 .hero-sub { animation-delay: 0.2s; }
 .hero-install { animation-delay: 0.3s; }
+.demo-window { animation: fadeUp 0.7s ease-out 0.4s both; }
 </style>
 </head>
 <body>
@@ -607,33 +415,69 @@ footer a { color: var(--text-dim); }
     <a href="#how">How it works</a>
     <a href="#formats">Formats</a>
     <a href="#mcp">MCP</a>
-    <a href="https://github.com/distalinc/aura" class="nav-cta">pip install aura-ctx</a>
+    <a href="https://github.com/WozGeek/BettaAura" class="nav-cta">GitHub →</a>
   </div>
 </nav>
 
+<!-- ─── HERO ─── -->
 <section class="hero">
   <div class="container">
-    <div class="hero-badge"><span>●</span> Open source · MIT License</div>
-    <h1>Your AI context<br>is <em>portable</em> now</h1>
+    <div class="hero-badge"><span>●</span> v0.2 · Open source · MIT</div>
+    <h1>Your AI tools don't<br>talk to <em>each other</em></h1>
     <p class="hero-sub">
-      Define who you are once. Export to Claude, ChatGPT, Cursor, and every AI tool. 
-      Stop re-explaining yourself.
+      aura scans your machine, builds your AI identity, and serves it to every tool via MCP. Define yourself once. Every AI knows you instantly.
     </p>
-    <div class="hero-install" onclick="navigator.clipboard.writeText('pip install aura-ctx')">
+    <div class="hero-install" onclick="navigator.clipboard.writeText('pip install aura-ctx').then(()=>{this.querySelector('.copy-hint').textContent='copied ✓';setTimeout(()=>{this.querySelector('.copy-hint').textContent='click to copy'},2000)})">
       <span class="prompt">$</span> pip install aura-ctx
       <span class="copy-hint">click to copy</span>
     </div>
   </div>
 </section>
 
+<!-- ─── TERMINAL DEMO ─── -->
+<section class="demo-section">
+  <div class="container">
+    <div class="demo-window">
+      <div class="demo-titlebar">
+        <div class="demo-dot"></div>
+        <div class="demo-dot"></div>
+        <div class="demo-dot"></div>
+        <span class="demo-title">terminal — aura</span>
+      </div>
+      <div class="demo-body"><span class="p">$</span> <span class="c">aura scan</span> ~/Documents
+
+<span class="a">✦</span> <span class="h">Scan complete</span>
+
+<span>  ● identity.name: Enoch A.</span>
+<span>  ● editor: Cursor</span>
+<span>  ● ai_tools: Claude Desktop, Cursor</span>
+<span>  ● languages.primary: TypeScript, JavaScript, Python</span>
+<span>  ● frameworks: Next.js, React, Tailwind, Supabase, FastAPI</span>
+<span>  ● projects.recent: elison, aura, hotepia</span>
+
+<span class="a">✦</span> <span class="h">Saved: developer</span> <span class="d">(12 facts auto-detected)</span>
+
+<span class="p">$</span> <span class="c">aura serve</span>
+
+<span class="a">✦</span> <span class="h">MCP server running</span> <span class="d">— localhost:3847</span>
+<span>  Serving 3 context packs</span>
+<span>  Claude Desktop, Cursor connected</span>
+
+<span class="d">  Open Claude. Ask anything. It already knows you.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PROBLEM ─── -->
 <section class="problem">
   <div class="container">
     <div class="problem-grid">
       <div>
-        <h2>Your context is scattered across every AI tool</h2>
+        <h2>Each AI builds a different picture of you</h2>
         <p>You use Claude for analysis, ChatGPT for writing, Cursor for coding. Each one makes you start from scratch.</p>
         <p>Your preferences, your stack, your style — locked inside each platform's proprietary memory, invisible to the others.</p>
-        <p style="color: var(--accent); margin-top: 20px; font-weight: 500;">MCP solved tool interoperability.<br>aura solves context interoperability.</p>
+        <p>Switch tools? Start from zero. Switch accounts? Gone. Platform memories are black boxes you can't version, audit, or export.</p>
+        <p class="problem-tagline">MCP solved tool interoperability.<br>aura solves context interoperability.</p>
       </div>
       <div class="problem-visual">
         <div class="platform-row">
@@ -656,51 +500,54 @@ footer a { color: var(--text-dim); }
           <div class="platform-bar" style="width: 40px; background: var(--yellow);"></div>
           <span class="platform-label">knows nothing</span>
         </div>
-        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center;">
-          <span style="color: var(--text-muted); font-size: 11px;">None of them talk to each other.</span>
+        <div class="problem-footer">
+          <span>None of them talk to each other.</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- ─── HOW IT WORKS ─── -->
 <section class="how" id="how">
   <div class="container">
-    <h2>Three commands. Every AI.</h2>
+    <div class="section-label">How it works</div>
+    <h2>Three steps. Every AI knows you.</h2>
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
-        <h3>Define your context</h3>
-        <p>Create scoped context packs — portable YAML files that describe who you are in each domain.</p>
-        <code><span class="cmd">aura</span> init
-<span class="cmd">aura</span> create dev <span class="flag">-t</span> <span class="arg">developer</span>
-<span class="cmd">aura</span> edit dev</code>
+        <h3>Scan your machine</h3>
+        <p>aura detects your languages, frameworks, tools, projects, and editor automatically. Zero YAML writing required.</p>
+        <code><span class="cmd">aura</span> scan
+<span class="cmt"># or the full flow:</span>
+<span class="cmd">aura</span> quickstart</code>
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <h3>Export anywhere</h3>
-        <p>One command generates the right format for each tool. System prompts, .cursorrules, Claude memory, ChatGPT instructions.</p>
-        <code><span class="cmd">aura</span> export dev <span class="flag">-f</span> <span class="arg">cursorrules</span>
-<span class="cmd">aura</span> export dev <span class="flag">-f</span> <span class="arg">claude-memory</span>
-<span class="cmd">aura</span> export dev <span class="flag">-f</span> <span class="arg">chatgpt-instructions</span></code>
+        <h3>Answer 5 questions</h3>
+        <p>Your role, communication style, current priorities, and rules. 2 minutes to capture what scanning can't detect.</p>
+        <code><span class="cmd">aura</span> onboard
+
+<span class="cmt"># or add facts directly:</span>
+<span class="cmd">aura</span> add dev <span class="arg">tone</span> <span class="flag">"Direct"</span></code>
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <h3>Or serve via MCP</h3>
-        <p>Start the built-in MCP server and every compatible tool reads your context automatically. Zero config.</p>
-        <code><span class="cmd">aura</span> serve <span class="flag">--mcp</span>
-
-<span class="cmt"># Claude, Cursor, ChatGPT Desktop</span>
-<span class="cmt"># all connect automatically</span></code>
+        <h3>Serve via MCP</h3>
+        <p>Start the built-in MCP server. Claude Desktop, Cursor, and any MCP client read your context automatically.</p>
+        <code><span class="cmd">aura</span> setup <span class="cmt"># config tools</span>
+<span class="cmd">aura</span> serve <span class="cmt"># start MCP</span></code>
       </div>
     </div>
   </div>
 </section>
 
-<section class="demo" id="demo">
+<!-- ─── YAML EXAMPLE ─── -->
+<section class="yaml-demo" id="yaml">
   <div class="container">
+    <div class="section-label">Context Packs</div>
     <h2>Your identity, structured</h2>
-    <p class="demo-sub">Context packs are human-readable YAML. Version them, share them, edit them.</p>
+    <p class="yaml-sub">Context packs are human-readable YAML. Version them, share them, edit them.</p>
     <div class="code-window">
       <div class="code-titlebar">
         <div class="code-dot"></div>
@@ -714,14 +561,14 @@ footer a { color: var(--text-dim); }
 
 <span class="kw">facts:</span>
   - <span class="key">key:</span> languages.primary
-    <span class="key">value:</span> <span class="str">[Python, TypeScript, Rust]</span>
+    <span class="key">value:</span> <span class="str">[TypeScript, Python]</span>
     <span class="key">confidence:</span> <span class="num">high</span>
 
   - <span class="key">key:</span> frameworks
-    <span class="str">[Next.js 15, FastAPI, Supabase]</span>
+    <span class="key">value:</span> <span class="str">[Next.js 15, FastAPI, Supabase]</span>
 
-  - <span class="key">key:</span> style.comments
-    <span class="str">"Minimal — only for non-obvious logic"</span>
+  - <span class="key">key:</span> editor
+    <span class="key">value:</span> <span class="str">Cursor</span>
 
 <span class="kw">rules:</span>
   - <span class="key">instruction:</span> <span class="str">"Always use TypeScript strict mode"</span>
@@ -734,27 +581,29 @@ footer a { color: var(--text-dim); }
   </div>
 </section>
 
+<!-- ─── FORMATS ─── -->
 <section class="formats" id="formats">
   <div class="container">
+    <div class="section-label">Exporters</div>
     <h2>Export to everything</h2>
     <div class="format-grid">
       <div class="format-card">
-        <span class="format-icon">◉</span>
+        <div class="format-icon">◉</div>
         <div class="format-name">System Prompt</div>
         <div class="format-flag">--format system-prompt</div>
       </div>
       <div class="format-card">
-        <span class="format-icon">⌘</span>
+        <div class="format-icon">⌘</div>
         <div class="format-name">Cursor IDE</div>
         <div class="format-flag">--format cursorrules</div>
       </div>
       <div class="format-card">
-        <span class="format-icon">✦</span>
+        <div class="format-icon">✦</div>
         <div class="format-name">Claude Memory</div>
         <div class="format-flag">--format claude-memory</div>
       </div>
       <div class="format-card">
-        <span class="format-icon">◎</span>
+        <div class="format-icon">◎</div>
         <div class="format-name">ChatGPT</div>
         <div class="format-flag">--format chatgpt-instructions</div>
       </div>
@@ -762,14 +611,16 @@ footer a { color: var(--text-dim); }
   </div>
 </section>
 
+<!-- ─── MCP ─── -->
 <section class="mcp-section" id="mcp">
   <div class="container">
     <div class="mcp-content">
       <div>
-        <h2>The <em>real</em> power:<br>built-in MCP server</h2>
-        <p>MCP (Model Context Protocol) is the open standard for connecting AI tools to data. aura includes a full MCP server out of the box.</p>
-        <p>Start it once. Every MCP-compatible client — Claude Desktop, Cursor, ChatGPT Desktop, VS Code, Windsurf — discovers your context automatically.</p>
-        <p>Your context packs become live resources that AI tools can query, search, and compose. No copy-paste. No re-explaining.</p>
+        <div class="section-label" style="text-align:left">MCP Server</div>
+        <h2>The <em>real</em> power:<br>built-in MCP</h2>
+        <p>aura includes a full MCP server. Start it once and every compatible tool — Claude Desktop, Cursor, ChatGPT Desktop — reads your context automatically.</p>
+        <p>No copy-paste. No re-explaining. Your context packs become live resources that AI tools query in real time.</p>
+        <p style="color:var(--text-muted);font-size:13px;margin-top:14px">Works with any tool that supports the Model Context Protocol.</p>
       </div>
       <div>
         <div class="mcp-config">
@@ -777,14 +628,17 @@ footer a { color: var(--text-dim); }
           <pre>{
   <span style="color:var(--cyan)">"mcpServers"</span>: {
     <span style="color:var(--green)">"aura"</span>: {
-      <span style="color:var(--cyan)">"url"</span>: <span style="color:var(--green)">"http://localhost:3847/mcp"</span>
+      <span style="color:var(--cyan)">"command"</span>: <span style="color:var(--green)">"npx"</span>,
+      <span style="color:var(--cyan)">"args"</span>: [<span style="color:var(--green)">"mcp-remote"</span>,
+        <span style="color:var(--green)">"http://localhost:3847/mcp"</span>]
     }
   }
 }</pre>
         </div>
-        <div class="mcp-config" style="margin-top: 16px;">
+        <div class="mcp-config">
           <div class="mcp-config-title">terminal</div>
-          <pre><span style="color:var(--accent)">$</span> aura serve --mcp
+          <pre><span style="color:var(--accent)">$</span> aura setup  <span style="color:var(--text-muted)"># auto-config Claude + Cursor</span>
+<span style="color:var(--accent)">$</span> aura serve
 
 <span style="color:var(--green)">✦</span> aura MCP server running
   Serving 3 context packs
@@ -795,17 +649,14 @@ footer a { color: var(--text-dim); }
   </div>
 </section>
 
+<!-- ─── CTA ─── -->
 <section class="cta">
   <div class="container">
     <h2>Own your <em>context</em></h2>
-    <p>Local-first. Open source. Your identity stays on your machine. Export it everywhere.</p>
+    <p>Local-first. Open source. Your identity stays on your machine. Every AI reads it.</p>
     <div class="cta-buttons">
-      <a href="https://github.com/distalinc/aura" class="btn-primary">
-        ★ Star on GitHub
-      </a>
-      <a href="https://github.com/distalinc/aura#quick-start" class="btn-secondary">
-        Read the docs →
-      </a>
+      <a href="https://github.com/WozGeek/BettaAura" class="btn-primary">★ Star on GitHub</a>
+      <a href="https://github.com/WozGeek/BettaAura#quick-start" class="btn-secondary">Read the docs →</a>
     </div>
   </div>
 </section>
@@ -813,7 +664,7 @@ footer a { color: var(--text-dim); }
 <footer>
   <div class="container">
     <div class="footer-brand">✦ aura</div>
-    <p>Built by <a href="https://distalinc.com">Distal Inc.</a> · MIT License · <a href="https://github.com/distalinc/aura">GitHub</a></p>
+    <p>Built by <a href="https://github.com/WozGeek">WozGeek</a> · MIT License · <a href="https://github.com/WozGeek/BettaAura">GitHub</a></p>
   </div>
 </footer>
 
