@@ -509,6 +509,223 @@ def extract(
 
 
 @app.command()
+def setup(
+    host: str = typer.Option("localhost", "--host", "-h", help="MCP server host"),
+    port: int = typer.Option(3847, "--port", "-p", help="MCP server port"),
+):
+    """Auto-configure Claude Desktop and Cursor to connect to aura's MCP server."""
+    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor
+
+    rprint(Panel.fit(
+        "[bold]✦ aura setup[/bold]\n\n"
+        "  Detecting installed AI tools and configuring MCP...",
+        border_style="cyan",
+    ))
+
+    tools = detect_installed_tools()
+
+    if not tools:
+        rprint("[yellow]No supported AI tools detected.[/yellow]")
+        return
+
+    configured = 0
+
+    for tool in tools:
+        name = tool["name"]
+        if not tool["installed"]:
+            rprint(f"  [dim]○ {name} — not installed[/dim]")
+            continue
+
+        # Configure based on tool
+        if name == "Claude Desktop":
+            result = setup_claude_desktop(host, port)
+        elif name == "Cursor":
+            result = setup_cursor(host, port)
+        else:
+            continue
+
+        if result["action"] == "configured":
+            rprint(f"  [green]✦ {name}[/green] — configured")
+            rprint(f"    [dim]{result['path']}[/dim]")
+            configured += 1
+        elif result["action"] == "already_configured":
+            rprint(f"  [cyan]● {name}[/cyan] — already configured")
+            configured += 1
+        else:
+            rprint(f"  [red]✗ {name}[/red] — {result['message']}")
+
+    if configured > 0:
+        rprint(f"\n[green]✦ {configured} tool(s) configured.[/green]")
+        rprint("\n  [bold]Next steps:[/bold]")
+        rprint("  1. Start the MCP server:  [cyan]aura serve --mcp[/cyan]")
+        rprint("  2. Restart Claude/Cursor to pick up the new config")
+        rprint("  3. Your context packs are now available automatically")
+    else:
+        rprint("\n[yellow]No tools configured.[/yellow]")
+        rprint("  Install Claude Desktop or Cursor, then run [bold]aura setup[/bold] again.")
+
+
+@app.command()
+def scan(
+    dirs: Optional[list[str]] = typer.Argument(None, help="Directories to scan (default: ~/Documents, ~/Projects, etc.)"),
+    name: str = typer.Option("developer", "--name", "-n", help="Name for the generated pack"),
+    save: bool = typer.Option(True, "--save/--no-save", help="Save the pack to disk"),
+):
+    """Scan your machine and auto-generate a context pack from your actual environment."""
+    from aura.pack import init_aura, pack_exists
+    from aura.pack import save_pack as _save_pack
+    from aura.scanner import Scanner
+
+    init_aura()
+
+    rprint(Panel.fit(
+        "[bold]✦ aura scan[/bold]\n\n"
+        "  Scanning your machine for languages, frameworks,\n"
+        "  tools, projects, and preferences...",
+        border_style="cyan",
+    ))
+
+    scanner = Scanner(scan_dirs=dirs)
+    pack = scanner.scan()
+    pack.name = name
+
+    # Display results
+    rprint("\n[green]✦ Scan complete[/green]\n")
+
+    if pack.facts:
+        rprint("[bold]Detected:[/bold]")
+        for fact in pack.facts:
+            val = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
+            icon = {"high": "[green]●[/green]", "medium": "[yellow]●[/yellow]", "low": "[red]●[/red]"}
+            rprint(f"  {icon.get(fact.confidence.value, '○')} [bold]{fact.key}[/bold]: {val}")
+
+    if not pack.facts:
+        rprint("[yellow]  No development environment detected.[/yellow]")
+        rprint("  [dim]Try specifying directories: aura scan ~/my-projects[/dim]")
+        return
+
+    if save:
+        if pack_exists(name):
+            overwrite = typer.confirm(f"\n  Pack '{name}' already exists. Overwrite?")
+            if not overwrite:
+                rprint("[dim]  Skipped. Use --name to save with a different name.[/dim]")
+                return
+
+        path = _save_pack(pack)
+        rprint(f"\n[green]✦ Saved:[/green] [bold]{name}[/bold]")
+        rprint(f"  File: [dim]{path}[/dim]")
+        rprint(f"  Facts: [cyan]{len(pack.facts)}[/cyan]")
+        rprint(f"\n  [dim]Review: aura show {name}[/dim]")
+        rprint(f"  [dim]Edit:   aura edit {name}[/dim]")
+    else:
+        rprint("\n  [dim]Dry run — use --save to write to disk[/dim]")
+
+
+@app.command()
+def onboard():
+    """Interactive onboarding — 5 questions to generate your context packs."""
+    from aura.onboard import Onboarder
+    from aura.pack import init_aura, pack_exists
+    from aura.pack import save_pack as _save_pack
+
+    init_aura()
+
+    rprint(Panel.fit(
+        "[bold]✦ aura onboard[/bold]\n\n"
+        "  5 quick questions to build your AI identity.\n"
+        "  Type 'skip' to skip any question.",
+        border_style="cyan",
+    ))
+
+    onboarder = Onboarder()
+    packs = onboarder.run()
+
+    if not packs:
+        rprint("\n[yellow]  No context captured. Run again when ready.[/yellow]")
+        return
+
+    saved = 0
+    for pack_name, pack in packs.items():
+        if pack_exists(pack_name):
+            overwrite = typer.confirm(f"\n  Pack '{pack_name}' already exists. Overwrite?")
+            if not overwrite:
+                continue
+
+        _save_pack(pack)
+        rprint(f"\n[green]✦ Created:[/green] [bold]{pack_name}[/bold]")
+        rprint(f"  Facts: [cyan]{len(pack.facts)}[/cyan] | Rules: [cyan]{len(pack.rules)}[/cyan]")
+        saved += 1
+
+    if saved > 0:
+        rprint(f"\n[green]✦ {saved} pack(s) created from onboarding.[/green]")
+        rprint("\n  [bold]Next steps:[/bold]")
+        rprint("  [dim]aura scan[/dim]            — auto-detect your dev stack")
+        rprint("  [dim]aura setup[/dim]           — connect Claude Desktop & Cursor")
+        rprint("  [dim]aura serve[/dim]           — start MCP server")
+
+
+@app.command()
+def quickstart():
+    """Full onboarding in one command: scan + onboard + setup + serve."""
+    rprint(Panel.fit(
+        "[bold]✦ aura quickstart[/bold]\n\n"
+        "  The fastest way to get your AI context running.\n"
+        "  Scan → Onboard → Setup → Serve",
+        border_style="green",
+    ))
+
+    # Step 1: Scan
+    rprint("\n[bold cyan]Step 1/4 — Scanning your machine...[/bold cyan]")
+    from aura.pack import init_aura
+    from aura.pack import save_pack as _save_pack
+    from aura.scanner import Scanner
+
+    init_aura()
+    scanner = Scanner()
+    dev_pack = scanner.scan()
+    dev_pack.name = "developer"
+    _save_pack(dev_pack)
+    rprint(f"  [green]✦[/green] Detected {len(dev_pack.facts)} facts about your dev environment")
+
+    # Step 2: Onboard
+    rprint("\n[bold cyan]Step 2/4 — Quick questions about you...[/bold cyan]")
+    from aura.onboard import Onboarder
+    onboarder = Onboarder()
+    packs = onboarder.run()
+    for pack_name, pack in packs.items():
+        _save_pack(pack)
+        rprint(f"  [green]✦[/green] Created {pack_name} ({len(pack.facts)} facts, {len(pack.rules)} rules)")
+
+    # Step 3: Setup
+    rprint("\n[bold cyan]Step 3/4 — Configuring AI tools...[/bold cyan]")
+    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor
+    for tool in detect_installed_tools():
+        if tool["installed"]:
+            if tool["name"] == "Claude Desktop":
+                setup_claude_desktop()
+                rprint("  [green]✦[/green] Claude Desktop configured")
+            elif tool["name"] == "Cursor":
+                setup_cursor()
+                rprint("  [green]✦[/green] Cursor configured")
+
+    # Step 4: Summary
+    from aura.pack import list_packs as _list_packs
+    all_packs = _list_packs()
+    total_facts = sum(len(p.facts) for p in all_packs)
+    total_rules = sum(len(p.rules) for p in all_packs)
+
+    rprint(Panel.fit(
+        f"[bold green]✦ aura is ready[/bold green]\n\n"
+        f"  {len(all_packs)} context packs | {total_facts} facts | {total_rules} rules\n\n"
+        f"  Start the MCP server:\n"
+        f"  [cyan]aura serve[/cyan]\n\n"
+        f"  Then restart Claude Desktop / Cursor.\n"
+        f"  Your AI will know you instantly.",
+        border_style="green",
+    ))
+
+
+@app.command()
 def version():
     """Show aura version."""
     rprint(f"[bold]aura[/bold] v{__version__}")

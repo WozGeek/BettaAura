@@ -414,3 +414,257 @@ class TestExtractor:
         ]
         merged = Extractor._merge_rules(rules)
         assert len(merged) == 2
+
+
+# ---------------------------------------------------------------------------
+# Setup tests
+# ---------------------------------------------------------------------------
+class TestSetup:
+    def test_detect_tools(self):
+        from aura.setup import detect_installed_tools
+        tools = detect_installed_tools()
+        assert isinstance(tools, list)
+        for tool in tools:
+            assert "name" in tool
+            assert "installed" in tool
+            assert "config_path" in tool
+
+    def test_aura_mcp_config(self):
+        from aura.setup import _aura_mcp_config
+        config = _aura_mcp_config("localhost", 3847)
+        assert config["url"] == "http://localhost:3847/mcp"
+
+    def test_aura_mcp_config_custom(self):
+        from aura.setup import _aura_mcp_config
+        config = _aura_mcp_config("0.0.0.0", 9000)
+        assert config["url"] == "http://0.0.0.0:9000/mcp"
+
+    def test_setup_claude_creates_config(self, tmp_path, monkeypatch):
+        from aura import setup as setup_module
+        config_path = tmp_path / "Claude" / "claude_desktop_config.json"
+        monkeypatch.setattr(setup_module, "_get_claude_config_path", lambda: config_path)
+
+        result = setup_module.setup_claude_desktop()
+        assert result["success"]
+        assert result["action"] == "configured"
+        assert config_path.exists()
+
+        # Verify JSON content
+        with open(config_path) as f:
+            data = json.load(f)
+        assert "aura" in data["mcpServers"]
+        assert "localhost:3847" in data["mcpServers"]["aura"]["url"]
+
+    def test_setup_claude_already_configured(self, tmp_path, monkeypatch):
+        from aura import setup as setup_module
+        config_path = tmp_path / "Claude" / "claude_desktop_config.json"
+        config_path.parent.mkdir(parents=True)
+        config_path.write_text(json.dumps({"mcpServers": {"aura": {"url": "http://localhost:3847/mcp"}}}))
+        monkeypatch.setattr(setup_module, "_get_claude_config_path", lambda: config_path)
+
+        result = setup_module.setup_claude_desktop()
+        assert result["success"]
+        assert result["action"] == "already_configured"
+
+    def test_setup_cursor_creates_config(self, tmp_path, monkeypatch):
+        from aura import setup as setup_module
+        config_path = tmp_path / ".cursor" / "mcp.json"
+        monkeypatch.setattr(setup_module, "_get_cursor_config_path", lambda: config_path)
+
+        result = setup_module.setup_cursor()
+        assert result["success"]
+        assert result["action"] == "configured"
+        assert config_path.exists()
+
+    def test_setup_preserves_existing_servers(self, tmp_path, monkeypatch):
+        from aura import setup as setup_module
+        config_path = tmp_path / "Claude" / "claude_desktop_config.json"
+        config_path.parent.mkdir(parents=True)
+        config_path.write_text(json.dumps({
+            "mcpServers": {"other-server": {"url": "http://localhost:5000"}}
+        }))
+        monkeypatch.setattr(setup_module, "_get_claude_config_path", lambda: config_path)
+
+        result = setup_module.setup_claude_desktop()
+        assert result["success"]
+
+        with open(config_path) as f:
+            data = json.load(f)
+        assert "other-server" in data["mcpServers"]
+        assert "aura" in data["mcpServers"]
+
+
+# ---------------------------------------------------------------------------
+# Scanner tests
+# ---------------------------------------------------------------------------
+class TestScanner:
+    def test_scan_returns_pack(self, tmp_path):
+        from aura.scanner import Scanner
+        scanner = Scanner(scan_dirs=[str(tmp_path)])
+        pack = scanner.scan()
+        assert pack.name == "scanned"
+        assert pack.scope == "development"
+        assert "scanned" in pack.meta.tags
+
+    def test_scan_detects_repo_languages(self, tmp_path):
+        from aura.scanner import Scanner
+        # Create a fake repo with Python and TypeScript files
+        repo = tmp_path / "my-project" / ".git"
+        repo.mkdir(parents=True)
+        (tmp_path / "my-project" / "main.py").write_text("print('hello')")
+        (tmp_path / "my-project" / "app.ts").write_text("console.log('hi')")
+        (tmp_path / "my-project" / "util.ts").write_text("export const x = 1")
+
+        scanner = Scanner(scan_dirs=[str(tmp_path)])
+        pack = scanner.scan()
+
+        lang_facts = [f for f in pack.facts if f.key == "languages.primary"]
+        assert len(lang_facts) == 1
+        assert "Python" in lang_facts[0].value
+        assert "TypeScript" in lang_facts[0].value
+
+    def test_scan_detects_frameworks(self, tmp_path):
+        from aura.scanner import Scanner
+        repo = tmp_path / "nextjs-app" / ".git"
+        repo.mkdir(parents=True)
+        (tmp_path / "nextjs-app" / "package.json").write_text(json.dumps({
+            "dependencies": {"next": "15.0.0", "react": "19.0.0", "tailwindcss": "4.0.0"}
+        }))
+
+        scanner = Scanner(scan_dirs=[str(tmp_path)])
+        pack = scanner.scan()
+
+        fw_facts = [f for f in pack.facts if f.key == "frameworks"]
+        assert len(fw_facts) == 1
+        assert "Next.js" in fw_facts[0].value
+        assert "React" in fw_facts[0].value
+        assert "Tailwind CSS" in fw_facts[0].value
+
+    def test_scan_detects_python_frameworks(self, tmp_path):
+        from aura.scanner import Scanner
+        repo = tmp_path / "api" / ".git"
+        repo.mkdir(parents=True)
+        (tmp_path / "api" / "requirements.txt").write_text("fastapi==0.104\npandas==2.0\npydantic==2.0\n")
+        (tmp_path / "api" / "main.py").write_text("from fastapi import FastAPI")
+
+        scanner = Scanner(scan_dirs=[str(tmp_path)])
+        pack = scanner.scan()
+
+        fw_facts = [f for f in pack.facts if f.key == "frameworks"]
+        assert len(fw_facts) == 1
+        assert "FastAPI" in fw_facts[0].value
+
+    def test_scan_detects_project_names(self, tmp_path):
+        from aura.scanner import Scanner
+        for name in ["hotepia", "elison", "aura"]:
+            (tmp_path / name / ".git").mkdir(parents=True)
+            (tmp_path / name / "main.py").write_text("")
+
+        scanner = Scanner(scan_dirs=[str(tmp_path)])
+        pack = scanner.scan()
+
+        proj_facts = [f for f in pack.facts if f.key == "projects.recent"]
+        assert len(proj_facts) == 1
+        names = proj_facts[0].value
+        assert "hotepia" in names or "elison" in names or "aura" in names
+
+    def test_scan_system_info(self):
+        from aura.scanner import Scanner
+        scanner = Scanner(scan_dirs=[])
+        pack = scanner.scan()
+
+        os_facts = [f for f in pack.facts if f.key == "system.os"]
+        assert len(os_facts) == 1
+        assert os_facts[0].value  # Should have something
+
+    def test_scan_empty_dir(self, tmp_path):
+        from aura.scanner import Scanner
+        scanner = Scanner(scan_dirs=[str(tmp_path)])
+        pack = scanner.scan()
+        # Should not crash, just have minimal facts
+        assert isinstance(pack.facts, list)
+
+
+# ---------------------------------------------------------------------------
+# Onboard tests
+# ---------------------------------------------------------------------------
+class TestOnboard:
+    def test_onboard_direct_tone(self):
+        from aura.onboard import Onboarder
+        answers = iter([
+            "Full-stack developer",  # role
+            "1",                      # tone = direct
+            "Building aura",          # priorities
+            "No corporate jargon, No emojis",  # rules
+            "English and French",     # languages
+        ])
+        onboarder = Onboarder()
+        packs = onboarder.run(ask_fn=lambda _: next(answers))
+
+        assert "writer" in packs
+        assert "work" in packs
+
+        writer = packs["writer"]
+        tone_facts = [f for f in writer.facts if f.key == "tone"]
+        assert len(tone_facts) == 1
+        assert "Direct" in tone_facts[0].value
+
+        # Should have rules from the preset + custom rules
+        assert len(writer.rules) >= 3
+
+    def test_onboard_custom_tone(self):
+        from aura.onboard import Onboarder
+        answers = iter([
+            "Designer",                      # role
+            "Playful but precise",           # custom tone
+            "Redesigning my portfolio",      # priorities
+            "skip",                          # no rules
+            "English",                       # languages
+        ])
+        onboarder = Onboarder()
+        packs = onboarder.run(ask_fn=lambda _: next(answers))
+
+        assert "writer" in packs
+        tone_facts = [f for f in packs["writer"].facts if f.key == "tone"]
+        assert tone_facts[0].value == "Playful but precise"
+
+    def test_onboard_skip_all(self):
+        from aura.onboard import Onboarder
+        answers = iter(["skip", "skip", "skip", "skip", "skip"])
+        onboarder = Onboarder()
+        packs = onboarder.run(ask_fn=lambda _: next(answers))
+        assert len(packs) == 0
+
+    def test_onboard_work_pack_has_role(self):
+        from aura.onboard import Onboarder
+        answers = iter([
+            "ML Engineer at DeepMind",
+            "3",                        # technical tone
+            "Training transformers",
+            "skip",
+            "English",
+        ])
+        onboarder = Onboarder()
+        packs = onboarder.run(ask_fn=lambda _: next(answers))
+
+        assert "work" in packs
+        role_facts = [f for f in packs["work"].facts if f.key == "role"]
+        assert "DeepMind" in role_facts[0].value
+
+    def test_onboard_rules_parsing(self):
+        from aura.onboard import Onboarder
+        answers = iter([
+            "Dev",
+            "1",
+            "Building stuff",
+            "No jQuery, Always use strict mode, Prefer functional patterns",
+            "English",
+        ])
+        onboarder = Onboarder()
+        packs = onboarder.run(ask_fn=lambda _: next(answers))
+
+        writer = packs["writer"]
+        custom_rules = [r for r in writer.rules if "jQuery" in r.instruction
+                       or "strict" in r.instruction
+                       or "functional" in r.instruction]
+        assert len(custom_rules) == 3

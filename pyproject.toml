@@ -48,10 +48,10 @@ dev = [
 aura = "aura.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/distalinc/aura"
-Documentation = "https://aura.distalinc.com"
-Repository = "https://github.com/distalinc/aura"
-Issues = "https://github.com/distalinc/aura/issues"
+Homepage = "https://github.com/WozGeek/BettaAura"
+Documentation = "https://wozgeek.github.io/BettaAura"
+Repository = "https://github.com/WozGeek/BettaAura"
+Issues = "https://github.com/WozGeek/BettaAura/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["aura"]
