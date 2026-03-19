@@ -398,7 +398,6 @@ class Scanner:
     # ------------------------------------------------------------------
     def _scan_existing_rules(self):
         """Look for existing .cursorrules, AGENTS.md, etc."""
-        Path.home()
         rules_files = [
             (".cursorrules", "cursorrules"),
             ("AGENTS.md", "agents-md"),
@@ -409,23 +408,27 @@ class Scanner:
             base = Path(scan_dir).expanduser()
             if not base.exists():
                 continue
-            for repo in base.iterdir():
+            try:
+                entries = list(base.iterdir())
+            except (PermissionError, OSError):
+                continue
+            for repo in entries:
                 if not repo.is_dir():
                     continue
                 for filename, source in rules_files:
                     filepath = repo / filename
-                    if filepath.exists():
-                        try:
-                            content = filepath.read_text()[:500]  # First 500 chars
+                    try:
+                        if filepath.exists() and filepath.is_file():
+                            content = filepath.read_text()[:500]
                             self.facts.append(Fact(
                                 key=f"existing_rules.{source}",
                                 value=f"Found in {repo.name}: {content[:100]}...",
                                 type=FactType.CONTEXT, confidence=Confidence.HIGH,
                                 source=f"file-scan-{source}",
                             ))
-                        except IOError:
-                            pass
-                        break  # One per type is enough
+                            break  # One per type is enough
+                    except (PermissionError, OSError, IOError):
+                        continue
 
     # ------------------------------------------------------------------
     # System info

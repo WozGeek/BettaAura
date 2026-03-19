@@ -1,67 +1,59 @@
 # ✦ aura
 
-**Your portable AI context. Carry your identity across every AI tool.**
+![CI](https://github.com/WozGeek/BettaAura/actions/workflows/ci.yml/badge.svg)
+[![PyPI](https://img.shields.io/pypi/v/aura-ctx)](https://pypi.org/project/aura-ctx/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**Your AI tools don't talk to each other. aura fixes that.**
 
 ---
 
-aura is an open-source CLI that lets you define, manage, and export your personal AI context as structured **context packs** — scoped bundles of facts, preferences, and rules that any AI tool can understand.
+You use Claude for analysis, ChatGPT for writing, Cursor for coding. Each one builds a different picture of who you are — your stack, your style, your preferences. None of them share it. When you switch tools, you start from zero.
 
-Stop re-explaining who you are to every AI. Define it once, export it everywhere.
+aura is an open-source CLI that scans your machine, builds your AI identity automatically, and serves it to every tool via MCP. Define yourself once. Every AI knows you instantly.
 
 ```bash
 pip install aura-ctx
-aura init
-aura create developer --template developer
-aura export developer --format cursorrules -o .cursorrules
+aura scan
+aura serve
+# → Claude Desktop, Cursor read your context automatically
 ```
 
-## The Problem
-
-You use Claude for analysis, ChatGPT for writing, Cursor for coding, Gemini for research. Each one makes you start from scratch. Your preferences, your stack, your style, your constraints — locked inside each platform's proprietary memory, invisible to the others.
-
-**MCP solved tool interoperability. aura solves context interoperability.**
-
-## How It Works
-
-aura introduces **context packs** — portable, scoped YAML files that describe who you are in a specific domain:
-
-```yaml
-# ~/.aura/packs/developer.yaml
-name: developer
-scope: development
-facts:
-  - key: languages.primary
-    value: [Python, TypeScript]
-    type: skill
-    confidence: high
-  - key: frameworks
-    value: [Next.js, FastAPI]
-    type: skill
-  - key: style.comments
-    value: "Minimal — only for non-obvious logic"
-    type: style
-rules:
-  - instruction: "Always use strict TypeScript"
-    priority: 8
-  - instruction: "Prefer functional patterns over OOP"
-    priority: 5
-```
-
-Then export to any format:
+## 30-Second Demo
 
 ```bash
-# For Cursor IDE
-aura export developer --format cursorrules -o .cursorrules
+$ aura scan ~/Documents
 
-# For Claude
-aura export developer writer --format claude-memory
+✦ Scan complete
 
-# For ChatGPT Custom Instructions
-aura export developer writer --format chatgpt-instructions
+Detected:
+  ● identity.name: Enoch A.
+  ● editor: Cursor
+  ● ai_tools: Claude Desktop, Cursor
+  ● languages.primary: TypeScript, JavaScript, Python
+  ● frameworks: Next.js, React, Tailwind CSS, Supabase, FastAPI
+  ● projects.recent: elison-v01, aura, hotepia
 
-# For any LLM (generic system prompt)
-aura export developer --format system-prompt
+✦ Saved: developer (12 facts)
+
+$ aura serve
+
+✦ aura MCP server running
+  Serving 3 context packs
+  Claude Desktop, Cursor connected
 ```
+
+Open Claude Desktop. Ask anything. It already knows your stack, your projects, your style — without you saying a word.
+
+## Why aura Exists
+
+**The problem is fragmentation.** Claude remembers your coding style. ChatGPT knows your writing tone. Cursor has your framework preferences. None of them talk to each other. When you change tools, switch accounts, or start a new AI — you lose everything.
+
+**The problem is opacity.** Platform memories are black boxes. You don't know what they stored, you can't version it, you can't audit it. When ChatGPT gives you a weird answer based on a misremembered fact from three months ago, you have no idea why.
+
+**The problem is lock-in.** The more you use one AI, the more it "knows" you, the harder it is to leave. That's not a feature — it's a trap.
+
+**aura gives you control.** Your context lives on your machine as readable YAML files. You decide what's shared, with which tool, and you can change it anytime. Local-first. No cloud. No tracking.
 
 ## Quick Start
 
@@ -69,32 +61,62 @@ aura export developer --format system-prompt
 # Install
 pip install aura-ctx
 
-# Initialize
-aura init
+# Scan your machine — auto-detects your stack
+aura scan
 
-# Create from template
-aura create developer --template developer
+# Answer 5 quick questions for style & preferences
+aura onboard
 
-# Customize
-aura edit developer
+# Connect Claude Desktop & Cursor automatically
+aura setup
 
-# Export
-aura export developer --format system-prompt
+# Start serving your context
+aura serve
 ```
 
-## Import from Existing Platforms
-
-Already have context locked in ChatGPT? Extract it:
+Or do it all at once:
 
 ```bash
-# From a ChatGPT data export (Settings → Data Controls → Export)
-aura import --source chatgpt chatgpt-export.zip
+aura quickstart
+```
 
-# Review what was extracted
-aura show chatgpt-import
+## How It Works
 
-# Edit and refine
-aura edit chatgpt-import
+aura creates **context packs** — scoped YAML files that describe who you are in a specific domain:
+
+```yaml
+# ~/.aura/packs/developer.yaml
+name: developer
+scope: development
+facts:
+  - key: languages.primary
+    value: [TypeScript, Python]
+    type: skill
+    confidence: high
+  - key: frameworks
+    value: [Next.js 15, FastAPI, Supabase]
+  - key: editor
+    value: Cursor
+rules:
+  - instruction: "Always use TypeScript strict mode"
+    priority: 8
+  - instruction: "Dark theme by default — use CSS variables"
+    priority: 8
+```
+
+Export to any format:
+
+```bash
+aura export developer --format cursorrules    # Cursor IDE
+aura export developer --format claude-memory  # Claude
+aura export developer --format chatgpt-instructions  # ChatGPT
+aura export developer --format system-prompt  # Any LLM
+```
+
+Or serve via MCP and every tool reads your context automatically:
+
+```bash
+aura serve
 ```
 
 ## Commands
@@ -102,84 +124,82 @@ aura edit chatgpt-import
 | Command | Description |
 |---------|-------------|
 | `aura init` | Initialize aura |
-| `aura create <name>` | Create a new context pack |
-| `aura create <name> -t <template>` | Create from template |
+| `aura scan [dirs]` | Auto-detect your stack from your machine |
+| `aura onboard` | 5 questions to generate your context |
+| `aura quickstart` | Scan + onboard + setup in one command |
+| `aura create <name>` | Create a pack manually |
+| `aura add <pack> <key> <value>` | Add a fact without editing YAML |
 | `aura list` | List all packs |
 | `aura show <name>` | Display a pack |
-| `aura show <name> --raw` | Show raw YAML |
 | `aura edit <name>` | Open in $EDITOR |
 | `aura export <names...> -f <format>` | Export to platform format |
-| `aura import -s <source> <file>` | Import from platform export |
+| `aura import -s <source> <file>` | Import from ChatGPT export |
+| `aura diff <a> <b>` | Compare two packs |
+| `aura doctor` | Check pack health — bloat, stale facts, duplicates |
+| `aura setup` | Auto-configure Claude Desktop + Cursor |
+| `aura serve` | Start MCP server |
 | `aura delete <name>` | Delete a pack |
-| `aura extract -s <source> <file>` | Deep-extract with LLM |
-| `aura diff <source> <target>` | Compare two packs |
-| `aura serve --mcp` | Start MCP server |
-| `aura templates` | List available templates |
 
-## Export Formats
+## The MCP Server
 
-| Format | Flag | Target |
-|--------|------|--------|
-| System Prompt | `--format system-prompt` | Any LLM |
-| Cursor Rules | `--format cursorrules` | Cursor IDE |
-| Claude Memory | `--format claude-memory` | Claude |
-| ChatGPT Instructions | `--format chatgpt-instructions` | ChatGPT |
+aura includes a full MCP (Model Context Protocol) server. Start it once, and every MCP-compatible tool reads your context automatically:
 
-## Context Pack Schema
-
-A context pack is a YAML file with this structure:
-
-```yaml
-name: string          # Unique identifier (lowercase)
-scope: string         # Domain: development, writing, work, research, etc.
-meta:
-  schema_version: "0.1.0"
-  description: string
-  tags: [string]
-facts:
-  - key: string       # Dot-notation key
-    value: string | [string]
-    type: preference | identity | skill | style | constraint | context
-    confidence: high | medium | low
-    source: manual | chatgpt-import | claude-import
-rules:
-  - instruction: string
-    priority: 0-10    # Higher = more important
+```bash
+aura setup   # writes config for Claude Desktop + Cursor
+aura serve   # starts the server on localhost:3847
 ```
 
-**Key design principle:** packs are **scoped by domain**. Your `developer` pack never leaks into a health consultation. Your `work` pack stays separate from your `personal` pack. You control what goes where.
+Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "aura": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://localhost:3847/mcp"]
+    }
+  }
+}
+```
+
+The server exposes:
+- **Resources**: each pack as a readable resource
+- **Tools**: `search_context`, `get_context_pack`, `get_user_profile`, `list_scopes`
+- **Prompts**: `with_context` to inject your full identity
 
 ## Philosophy
 
-1. **Local-first.** Your context lives on your machine in `~/.aura/packs/`. No cloud, no account, no tracking.
-2. **Schema, not platform.** aura defines a portable format. Exporters adapt it to each tool's native language.
-3. **Scoped, not monolithic.** Separate packs for separate domains. No semantic leakage.
-4. **Human-readable.** YAML files you can read, edit, version control, and share.
-5. **Progressively useful.** Works with zero setup (templates), gets better as you customize.
+1. **Local-first.** Your context lives on your machine. No cloud, no account, no tracking.
+2. **Problem-first.** Your AI tools don't talk to each other. That's the problem we solve.
+3. **Scoped, not monolithic.** Separate packs for separate domains. Your dev context doesn't leak into health questions.
+4. **Human-controlled.** aura never writes to your packs without asking. You review everything.
+5. **Lean by design.** 30-50 facts per pack, not 500. `aura doctor` tells you when to clean up.
 
 ## Roadmap
 
 - [x] Core schema & context packs
-- [x] CLI (create, edit, list, show, export, import, delete, diff)
-- [x] Export: system prompt, .cursorrules, Claude memory, ChatGPT instructions
-- [x] Import: ChatGPT data export (heuristic extraction)
-- [x] MCP server (`aura serve --mcp`) — serve context to any MCP client
-- [x] LLM-powered extraction (`aura extract`) — deep context mining with local/cloud models
-- [x] `aura diff` — compare packs (local vs platform import)
-- [x] 39 tests covering schema, exporters, importers, diff, MCP, extractor
-- [ ] Import: Claude conversation export
-- [ ] AGENTS.md export — generate AGENTS.md for repos
-- [ ] Windsurf / Copilot / Gemini export formats
-- [ ] `aura sync` — bidirectional sync via MCP
+- [x] CLI with 18 commands
+- [x] `aura scan` — auto-detect stack from machine
+- [x] `aura onboard` — 5-question interactive setup
+- [x] `aura quickstart` — full onboarding in one command
+- [x] `aura setup` — auto-configure Claude Desktop + Cursor
+- [x] `aura doctor` — pack health checker
+- [x] `aura add` — add facts without editing YAML
+- [x] MCP server with resources, tools, and prompts
+- [x] 4 export formats: system-prompt, cursorrules, claude-memory, chatgpt-instructions
+- [x] ChatGPT import (heuristic extraction)
+- [x] LLM-powered deep extraction
+- [x] Diff engine
+- [x] 65+ tests, CI, MIT license
+- [ ] Claude conversation import
+- [ ] AGENTS.md export
+- [ ] `aura watch` — suggest new facts from recent conversations
 - [ ] Web dashboard for visual pack editing
-- [ ] Rust rewrite for single-binary distribution
+- [ ] Chrome extension for claude.ai / chatgpt.com
 
 ## Contributing
 
-aura is MIT-licensed and welcomes contributions. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-Built by [Distal Inc.](https://distalinc.com) — open infrastructure for the AI era.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ## License
 
-MIT
+MIT — Built by [WozGeek](https://github.com/WozGeek)

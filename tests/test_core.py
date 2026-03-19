@@ -668,3 +668,67 @@ class TestOnboard:
                        or "strict" in r.instruction
                        or "functional" in r.instruction]
         assert len(custom_rules) == 3
+
+
+# ---------------------------------------------------------------------------
+# Doctor tests
+# ---------------------------------------------------------------------------
+class TestDoctor:
+    def test_healthy_packs(self, dev_pack, writer_pack):
+        from aura.doctor import diagnose
+        report = diagnose([dev_pack, writer_pack])
+        assert report.score > 0
+        assert isinstance(report.issues, list)
+
+    def test_empty_pack_warning(self):
+        from aura.doctor import diagnose
+        empty = ContextPack(name="empty", scope="test", facts=[], rules=[])
+        report = diagnose([empty])
+        warnings = [i for i in report.issues if "empty" in i.message.lower()]
+        assert len(warnings) > 0
+
+    def test_no_packs_warning(self):
+        from aura.doctor import diagnose
+        report = diagnose([])
+        assert report.score == 0
+        assert len(report.issues) > 0
+
+    def test_bloated_pack_warning(self):
+        from aura.doctor import diagnose
+        facts = [Fact(key=f"fact_{i}", value=f"value_{i}") for i in range(50)]
+        bloated = ContextPack(name="bloated", scope="test", facts=facts)
+        report = diagnose([bloated])
+        size_warnings = [i for i in report.issues if "facts" in i.message.lower() and "recommended" in i.message.lower()]
+        assert len(size_warnings) > 0
+
+    def test_duplicate_across_packs(self):
+        from aura.doctor import diagnose
+        pack_a = ContextPack(
+            name="a", scope="dev",
+            facts=[Fact(key="lang", value="Python")],
+        )
+        pack_b = ContextPack(
+            name="b", scope="work",
+            facts=[Fact(key="lang", value="Python")],
+        )
+        report = diagnose([pack_a, pack_b])
+        dup_issues = [i for i in report.issues if "duplicate" in i.message.lower()]
+        assert len(dup_issues) > 0
+
+    def test_no_rules_info(self, dev_pack):
+        from aura.doctor import diagnose
+        # dev_pack has rules, so create one without
+        no_rules = ContextPack(
+            name="norules", scope="test",
+            facts=[Fact(key="x", value="y")],
+            rules=[],
+        )
+        report = diagnose([no_rules])
+        rule_issues = [i for i in report.issues if "no rules" in i.message.lower()]
+        assert len(rule_issues) > 0
+
+    def test_format_report(self, dev_pack):
+        from aura.doctor import diagnose, format_report
+        report = diagnose([dev_pack])
+        text = format_report(report)
+        assert "score" in text.lower() or "Health" in text

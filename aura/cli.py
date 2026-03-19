@@ -726,6 +726,75 @@ def quickstart():
 
 
 @app.command()
+def doctor():
+    """Check the health of your context packs — detect bloat, stale facts, duplicates."""
+    from aura.doctor import diagnose, format_report
+    from aura.pack import is_initialized
+    from aura.pack import list_packs as _list_packs
+
+    if not is_initialized():
+        rprint("[yellow]aura is not initialized.[/yellow] Run [bold]aura init[/bold] first.")
+        raise typer.Exit(1)
+
+    packs = _list_packs()
+
+    rprint(Panel.fit(
+        "[bold]✦ aura doctor[/bold]\n\n"
+        f"  Checking {len(packs)} pack(s)...",
+        border_style="cyan",
+    ))
+
+    report = diagnose(packs)
+    rprint(format_report(report))
+
+
+@app.command()
+def add(
+    pack_name: str = typer.Argument(..., help="Pack to add the fact to"),
+    key: str = typer.Argument(..., help="Fact key (e.g. 'languages.learning')"),
+    value: str = typer.Argument(..., help="Fact value (e.g. 'Rust')"),
+    fact_type: str = typer.Option("context", "--type", "-t", help="Fact type: preference, identity, skill, style, constraint, context"),
+):
+    """Add a fact to a pack in one command. No YAML editing needed."""
+    from aura.pack import load_pack, pack_exists
+    from aura.pack import save_pack as _save_pack
+    from aura.schema import Confidence, Fact
+
+    if not pack_exists(pack_name):
+        rprint(f"[red]✗ Pack '{pack_name}' not found.[/red]")
+        raise typer.Exit(1)
+
+    pack = load_pack(pack_name)
+
+    # Check if fact with this key already exists
+    existing = [f for f in pack.facts if f.key == key]
+    if existing:
+        rprint(f"[yellow]⚡ Fact '{key}' already exists:[/yellow] {existing[0].value}")
+        overwrite = typer.confirm("  Overwrite?")
+        if not overwrite:
+            return
+        pack.facts = [f for f in pack.facts if f.key != key]
+
+    # Parse value — if it contains commas, treat as list
+    parsed_value: str | list[str] = value
+    if "," in value:
+        parsed_value = [v.strip() for v in value.split(",") if v.strip()]
+
+    new_fact = Fact(
+        key=key,
+        value=parsed_value,
+        type=fact_type,
+        confidence=Confidence.HIGH,
+        source="manual",
+    )
+    pack.facts.append(new_fact)
+    _save_pack(pack)
+
+    val_display = parsed_value if isinstance(parsed_value, str) else ", ".join(parsed_value)
+    rprint(f"[green]✦ Added to {pack_name}:[/green] {key} = {val_display}")
+
+
+@app.command()
 def version():
     """Show aura version."""
     rprint(f"[bold]aura[/bold] v{__version__}")
