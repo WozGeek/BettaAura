@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aura-ctx"
-version = "0.1.0"
+version = "0.2.0"
 description = "Your portable AI context. Carry your identity across every AI tool."
 readme = "README.md"
 license = "MIT"
