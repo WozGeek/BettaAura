@@ -698,7 +698,7 @@ def quickstart():
 
     # Step 3: Setup
     rprint("\n[bold cyan]Step 3/4 — Configuring AI tools...[/bold cyan]")
-    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor
+    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor, setup_gemini
     for tool in detect_installed_tools():
         if tool["installed"]:
             if tool["name"] == "Claude Desktop":
@@ -707,6 +707,13 @@ def quickstart():
             elif tool["name"] == "Cursor":
                 setup_cursor()
                 rprint("  [green]✦[/green] Cursor configured")
+            elif tool["name"] == "Gemini CLI":
+                setup_gemini()
+                rprint("  [green]✦[/green] Gemini CLI configured")
+            elif tool["name"] == "ChatGPT Desktop":
+                rprint("  [green]✦[/green] ChatGPT Desktop detected — use Developer Mode to add MCP")
+                rprint("    [dim]Settings → Connectors → Advanced → Developer Mode[/dim]")
+                rprint("    [dim]SSE URL: http://localhost:3847/sse[/dim]")
 
     # Step 4: Summary
     from aura.pack import list_packs as _list_packs
@@ -719,8 +726,8 @@ def quickstart():
         f"  {len(all_packs)} context packs | {total_facts} facts | {total_rules} rules\n\n"
         f"  Start the MCP server:\n"
         f"  [cyan]aura serve[/cyan]\n\n"
-        f"  Then restart Claude Desktop / Cursor.\n"
-        f"  Your AI will know you instantly.",
+        f"  Then restart your AI tools.\n"
+        f"  Claude, ChatGPT, Cursor, Gemini — they all know you now.",
         border_style="green",
     ))
 

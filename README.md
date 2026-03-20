@@ -107,13 +107,13 @@ rules:
 Export to any format:
 
 ```bash
-aura export developer --format cursorrules    # Cursor IDE
-aura export developer --format claude-memory  # Claude
+aura export developer --format cursorrules           # Cursor IDE
+aura export developer --format claude-memory         # Claude
 aura export developer --format chatgpt-instructions  # ChatGPT
-aura export developer --format system-prompt  # Any LLM
+aura export developer --format system-prompt         # Any LLM / Gemini
 ```
 
-Or serve via MCP and every tool reads your context automatically:
+Or serve via MCP and Claude, ChatGPT, Cursor, and Gemini read your context automatically:
 
 ```bash
 aura serve
@@ -145,11 +145,13 @@ aura serve
 aura includes a full MCP (Model Context Protocol) server. Start it once, and every MCP-compatible tool reads your context automatically:
 
 ```bash
-aura setup   # writes config for Claude Desktop + Cursor
+aura setup   # writes config for Claude Desktop, Cursor, Gemini CLI
 aura serve   # starts the server on localhost:3847
 ```
 
-Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+### Claude Desktop
+
+Config is written automatically by `aura setup`. Manual path: `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
@@ -157,6 +159,41 @@ Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_conf
       "command": "npx",
       "args": ["mcp-remote", "http://localhost:3847/mcp"]
     }
+  }
+}
+```
+
+### ChatGPT Desktop
+
+Requires a Plus or Pro subscription with Developer Mode enabled:
+
+1. Open ChatGPT Desktop → Settings → Connectors → Advanced → **Developer Mode**
+2. Add a new MCP connector with SSE URL: `http://localhost:3847/sse`
+3. Start `aura serve` and ChatGPT reads your context automatically
+
+### Cursor IDE
+
+Config is written automatically by `aura setup`. Manual path: `~/.cursor/mcp.json`:
+```json
+{
+  "mcpServers": {
+    "aura": { "url": "http://localhost:3847/mcp" }
+  }
+}
+```
+
+### Gemini CLI
+
+Config is written automatically by `aura setup`. Or manually:
+```bash
+gemini mcp add --transport sse aura http://localhost:3847/sse
+```
+
+Or add to `~/.gemini/settings.json`:
+```json
+{
+  "mcpServers": {
+    "aura": { "url": "http://localhost:3847/sse" }
   }
 }
 ```
