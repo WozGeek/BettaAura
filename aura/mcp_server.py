@@ -2,7 +2,12 @@
 aura.mcp_server — Model Context Protocol Server
 
 Serves your context packs to any MCP-compatible AI client.
-Run with: aura serve --mcp
+Run with: aura serve
+
+Security:
+  - Binds to localhost only (127.0.0.1) by default
+  - Optional token authentication via --token flag
+  - Scoped serving via --packs flag (only serve specific packs)
 
 Exposes context packs as:
   - Resources: each pack is a readable resource
@@ -15,6 +20,7 @@ Protocol spec: https://modelcontextprotocol.io/specification/2025-11-25
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from typing import Any
 
@@ -47,6 +53,55 @@ app.add_middleware(
 )
 
 init_aura()
+
+
+# ---------------------------------------------------------------------------
+# Security: token auth + scoped packs
+# ---------------------------------------------------------------------------
+_AUTH_TOKEN: str | None = os.environ.get("AURA_TOKEN", None)
+_ALLOWED_PACKS: list[str] | None = None  # None = all packs
+_WRITE_ENABLED: bool = True  # Can be disabled with --read-only
+
+
+def configure_security(
+    token: str | None = None,
+    allowed_packs: list[str] | None = None,
+    read_only: bool = False,
+):
+    """Configure server security settings. Called before server starts."""
+    global _AUTH_TOKEN, _ALLOWED_PACKS, _WRITE_ENABLED
+    if token:
+        _AUTH_TOKEN = token
+    if allowed_packs:
+        _ALLOWED_PACKS = allowed_packs
+    _WRITE_ENABLED = not read_only
+
+
+def _check_auth(request: Request) -> bool:
+    """Check if request is authenticated. Returns True if OK."""
+    if _AUTH_TOKEN is None:
+        return True
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header == f"Bearer {_AUTH_TOKEN}":
+        return True
+    # Also check query param for SSE clients that can't set headers
+    if request.query_params.get("token") == _AUTH_TOKEN:
+        return True
+    return False
+
+
+def _filter_packs(packs):
+    """Filter packs based on allowed list."""
+    if _ALLOWED_PACKS is None:
+        return packs
+    return [p for p in packs if p.name in _ALLOWED_PACKS]
+
+
+def _is_pack_allowed(pack_name: str) -> bool:
+    """Check if a specific pack is allowed to be served."""
+    if _ALLOWED_PACKS is None:
+        return True
+    return pack_name in _ALLOWED_PACKS
 
 
 # ---------------------------------------------------------------------------
@@ -171,13 +226,15 @@ PROMPTS = [
 def execute_tool(name: str, arguments: dict) -> list[dict]:
     if name == "get_context":
         pack_name = arguments["pack_name"]
+        if not _is_pack_allowed(pack_name):
+            return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
         if not pack_exists(pack_name):
             return [{"type": "text", "text": f"Pack '{pack_name}' not found. Use list_packs to see available packs."}]
         pack = load_pack(pack_name)
         return [{"type": "text", "text": pack.to_system_prompt()}]
 
     elif name == "get_all_context":
-        packs = list_packs()
+        packs = _filter_packs(list_packs())
         scopes = arguments.get("scopes", [])
         if scopes:
             packs = [p for p in packs if p.scope in scopes]
@@ -188,7 +245,7 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
     elif name == "search_context":
         query = arguments["query"].lower()
         results = []
-        for pack in list_packs():
+        for pack in _filter_packs(list_packs()):
             for fact in pack.facts:
                 val_str = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
                 if query in fact.key.lower() or query in val_str.lower():
@@ -201,7 +258,11 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
         return [{"type": "text", "text": "\n".join(results)}]
 
     elif name == "add_fact":
+        if not _WRITE_ENABLED:
+            return [{"type": "text", "text": "Server is in read-only mode. Facts cannot be added."}]
         pack_name = arguments["pack_name"]
+        if not _is_pack_allowed(pack_name):
+            return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
         if not pack_exists(pack_name):
             return [{"type": "text", "text": f"Pack '{pack_name}' not found."}]
         pack = load_pack(pack_name)
@@ -222,7 +283,11 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
         return [{"type": "text", "text": f"✓ Added fact '{arguments['key']}' to '{pack_name}'."}]
 
     elif name == "add_rule":
+        if not _WRITE_ENABLED:
+            return [{"type": "text", "text": "Server is in read-only mode. Rules cannot be added."}]
         pack_name = arguments["pack_name"]
+        if not _is_pack_allowed(pack_name):
+            return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
         if not pack_exists(pack_name):
             return [{"type": "text", "text": f"Pack '{pack_name}' not found."}]
         pack = load_pack(pack_name)
@@ -234,7 +299,7 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
         return [{"type": "text", "text": f"✓ Added rule to '{pack_name}'."}]
 
     elif name == "list_packs":
-        packs = list_packs()
+        packs = _filter_packs(list_packs())
         if not packs:
             return [{"type": "text", "text": "No context packs found."}]
         lines = []
@@ -252,7 +317,7 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
 # ---------------------------------------------------------------------------
 def get_resources() -> list[dict]:
     resources = []
-    for pack in list_packs():
+    for pack in _filter_packs(list_packs()):
         resources.append({
             "uri": f"aura://packs/{pack.name}",
             "name": f"Context: {pack.name}",
@@ -270,10 +335,12 @@ def get_resources() -> list[dict]:
 
 def read_resource(uri: str) -> list[dict]:
     if uri == "aura://context/full":
-        packs = list_packs()
+        packs = _filter_packs(list_packs())
         return [{"uri": uri, "mimeType": "text/plain", "text": export_system_prompt(packs)}]
     if uri.startswith("aura://packs/"):
         name = uri.replace("aura://packs/", "")
+        if not _is_pack_allowed(name):
+            return [{"uri": uri, "mimeType": "text/plain", "text": f"Pack not available: {name}"}]
         if pack_exists(name):
             pack = load_pack(name)
             return [{"uri": uri, "mimeType": "text/plain", "text": pack.to_system_prompt()}]
@@ -285,7 +352,7 @@ def read_resource(uri: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 def get_prompt(name: str, arguments: dict) -> dict:
     if name == "with_full_context":
-        packs = list_packs()
+        packs = _filter_packs(list_packs())
         content = export_system_prompt(packs, include_header=False)
         return {
             "description": "Full user context",
@@ -293,7 +360,7 @@ def get_prompt(name: str, arguments: dict) -> dict:
         }
     elif name == "with_scope":
         scope = arguments.get("scope", "")
-        packs = [p for p in list_packs() if p.scope == scope or p.name == scope]
+        packs = [p for p in _filter_packs(list_packs()) if p.scope == scope or p.name == scope]
         if not packs:
             return {"description": f"No context for '{scope}'", "messages": []}
         content = export_system_prompt(packs, include_header=False)
@@ -348,6 +415,25 @@ def handle_jsonrpc(data: dict) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Auth middleware
+# ---------------------------------------------------------------------------
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    """Check auth token on all MCP endpoints."""
+    # Skip auth for health and root endpoints
+    if request.url.path in ("/health", "/"):
+        return await call_next(request)
+
+    if not _check_auth(request):
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Unauthorized. Pass token via 'Authorization: Bearer <token>' header or '?token=<token>' query param."},
+        )
+
+    return await call_next(request)
+
+
+# ---------------------------------------------------------------------------
 # HTTP endpoints
 # ---------------------------------------------------------------------------
 @app.post("/mcp")
@@ -367,15 +453,52 @@ async def mcp_sse():
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+@app.get("/sse")
+async def sse_endpoint():
+    """SSE endpoint for ChatGPT and Gemini CLI."""
+    async def stream():
+        yield f"data: {json.dumps({'jsonrpc': '2.0', 'method': 'notifications/ready'})}\n\n"
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/sse")
+async def sse_post_endpoint(request: Request):
+    """SSE POST endpoint — same as /mcp POST, for clients that use /sse."""
+    body = await request.json()
+    if isinstance(body, list):
+        responses = [r for r in (handle_jsonrpc(req) for req in body) if r is not None]
+        return JSONResponse(responses)
+    response = handle_jsonrpc(body)
+    return Response(status_code=204) if response is None else JSONResponse(response)
+
+
 @app.get("/health")
 async def health():
-    packs = list_packs()
-    return {"status": "ok", "version": __version__, "packs": len(packs), "packs_dir": str(get_packs_dir())}
+    packs = _filter_packs(list_packs())
+    auth_enabled = _AUTH_TOKEN is not None
+    return {
+        "status": "ok",
+        "version": __version__,
+        "packs": len(packs),
+        "packs_dir": str(get_packs_dir()),
+        "auth_enabled": auth_enabled,
+        "read_only": not _WRITE_ENABLED,
+        "scoped": _ALLOWED_PACKS is not None,
+    }
 
 
 @app.get("/")
 async def root():
-    return {"name": "aura", "version": __version__, "description": "Your portable AI context — MCP Server", "endpoints": {"/mcp": "MCP protocol", "/health": "Health check"}}
+    return {
+        "name": "aura",
+        "version": __version__,
+        "description": "Your portable AI context — MCP Server",
+        "endpoints": {
+            "/mcp": "MCP protocol (Claude Desktop, Cursor)",
+            "/sse": "SSE endpoint (ChatGPT, Gemini CLI)",
+            "/health": "Health check",
+        },
+    }
 
 
 def run_server(host: str = "localhost", port: int = 3847):

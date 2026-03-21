@@ -211,6 +211,36 @@ The server exposes:
 4. **Human-controlled.** aura never writes to your packs without asking. You review everything.
 5. **Lean by design.** 30-50 facts per pack, not 500. `aura doctor` tells you when to clean up.
 
+## Security
+
+aura is designed local-first. Your data stays on your machine.
+
+**What's protected:**
+- The MCP server binds to `localhost` by default — only your machine can access it
+- `aura serve --token <secret>` requires all MCP clients to authenticate with a Bearer token
+- `aura serve --packs developer,writer` only serves specific packs — your other packs stay private
+- `aura serve --read-only` disables write operations — AI tools can read your context but not modify it
+- Human-controlled: aura never writes to your packs without your explicit action
+- You can set `AURA_TOKEN` as an environment variable instead of passing it as a flag
+
+**What's not encrypted (yet):**
+- Context packs are stored as plain YAML in `~/.aura/packs/`. Anyone with filesystem access can read them
+- Add `.aura/` to your `.gitignore` to prevent accidental commits
+
+**Recommended setup for shared machines:**
+```bash
+# Generate a random token
+export AURA_TOKEN=$(openssl rand -hex 16)
+
+# Serve only your dev pack, read-only, with auth
+aura serve --token $AURA_TOKEN --packs developer --read-only
+```
+
+**Coming in future versions:**
+- Encrypted packs (AES-256)
+- Per-client access control (Claude sees dev, ChatGPT sees writer)
+- Audit log of all MCP reads
+
 ## Roadmap
 
 - [x] Core schema & context packs

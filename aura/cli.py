@@ -395,26 +395,49 @@ def diff(
 
 @app.command()
 def serve(
-    host: str = typer.Option("localhost", "--host", "-h", help="Host to bind to"),
+    host: str = typer.Option("localhost", "--host", "-h", help="Host to bind to (default: localhost = local only)"),
     port: int = typer.Option(3847, "--port", "-p", help="Port to listen on"),
+    token: Optional[str] = typer.Option(None, "--token", "-t", help="Require auth token for all MCP requests"),
+    packs: Optional[str] = typer.Option(None, "--packs", help="Comma-separated list of packs to serve (default: all)"),
+    read_only: bool = typer.Option(False, "--read-only", help="Disable write operations (add_fact, add_rule)"),
 ):
     """Start the aura MCP server. Serves your context packs to any MCP client."""
     from aura.pack import init_aura
     from aura.pack import list_packs as _list_packs
 
     init_aura()
-    packs = _list_packs()
+
+    # Configure security
+    from aura.mcp_server import configure_security
+    allowed_packs = [p.strip() for p in packs.split(",")] if packs else None
+    configure_security(token=token, allowed_packs=allowed_packs, read_only=read_only)
+
+    # Count packs that will be served
+    all_packs = _list_packs()
+    if allowed_packs:
+        served_packs = [p for p in all_packs if p.name in allowed_packs]
+    else:
+        served_packs = all_packs
+
+    # Security status line
+    security_lines = []
+    if token:
+        security_lines.append("  [yellow]🔒 Auth:[/yellow]   token required")
+    else:
+        security_lines.append("  [dim]🔓 Auth:[/dim]   open (use --token to secure)")
+    if allowed_packs:
+        security_lines.append(f"  [cyan]📦 Packs:[/cyan]  {', '.join(allowed_packs)}")
+    if read_only:
+        security_lines.append("  [yellow]📖 Mode:[/yellow]   read-only")
+    security_block = "\n".join(security_lines)
 
     rprint(Panel.fit(
         f"[bold green]✦ aura MCP server[/bold green]\n\n"
         f"  Endpoint:  [cyan]http://{host}:{port}/mcp[/cyan]\n"
         f"  SSE:       [cyan]http://{host}:{port}/sse[/cyan]\n"
         f"  Health:    [cyan]http://{host}:{port}/health[/cyan]\n\n"
-        f"  Serving [bold]{len(packs)}[/bold] context packs\n\n"
-        f"  [dim]Add to Claude Desktop config:[/dim]\n"
-        f'  [dim]{{"mcpServers": {{"aura": {{"url": "http://{host}:{port}/mcp"}}}}}}[/dim]\n\n'
-        f"  [dim]Add to Cursor settings:[/dim]\n"
-        f'  [dim]{{"mcpServers": {{"aura": {{"url": "http://{host}:{port}/sse"}}}}}}[/dim]',
+        f"  Serving [bold]{len(served_packs)}[/bold] context packs\n\n"
+        f"{security_block}",
         title="aura v" + __version__,
         border_style="green",
     ))
@@ -513,8 +536,8 @@ def setup(
     host: str = typer.Option("localhost", "--host", "-h", help="MCP server host"),
     port: int = typer.Option(3847, "--port", "-p", help="MCP server port"),
 ):
-    """Auto-configure Claude Desktop and Cursor to connect to aura's MCP server."""
-    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor
+    """Auto-configure Claude Desktop, ChatGPT, Cursor, and Gemini CLI to connect to aura's MCP server."""
+    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor, setup_gemini
 
     rprint(Panel.fit(
         "[bold]✦ aura setup[/bold]\n\n"
@@ -541,6 +564,14 @@ def setup(
             result = setup_claude_desktop(host, port)
         elif name == "Cursor":
             result = setup_cursor(host, port)
+        elif name == "Gemini CLI":
+            result = setup_gemini(host, port)
+        elif name == "ChatGPT Desktop":
+            rprint(f"  [green]✦ {name}[/green] — detected")
+            rprint("    [dim]Open Settings → Connectors → Advanced → Developer Mode[/dim]")
+            rprint(f"    [dim]SSE URL: http://{host}:{port}/sse[/dim]")
+            configured += 1
+            continue
         else:
             continue
 
@@ -557,12 +588,12 @@ def setup(
     if configured > 0:
         rprint(f"\n[green]✦ {configured} tool(s) configured.[/green]")
         rprint("\n  [bold]Next steps:[/bold]")
-        rprint("  1. Start the MCP server:  [cyan]aura serve --mcp[/cyan]")
-        rprint("  2. Restart Claude/Cursor to pick up the new config")
+        rprint("  1. Start the MCP server:  [cyan]aura serve[/cyan]")
+        rprint("  2. Restart your AI tools to pick up the new config")
         rprint("  3. Your context packs are now available automatically")
     else:
         rprint("\n[yellow]No tools configured.[/yellow]")
-        rprint("  Install Claude Desktop or Cursor, then run [bold]aura setup[/bold] again.")
+        rprint("  Install Claude Desktop, ChatGPT, Cursor, or Gemini CLI, then run [bold]aura setup[/bold] again.")
 
 
 @app.command()
