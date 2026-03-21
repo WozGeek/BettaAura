@@ -50,6 +50,7 @@ class ExportFormat(str, Enum):
 
 class ImportSource(str, Enum):
     CHATGPT = "chatgpt"
+    CLAUDE = "claude"
 
 
 # ---------------------------------------------------------------------------
@@ -303,6 +304,12 @@ def import_context(
     if source == ImportSource.CHATGPT:
         from aura.importers.chatgpt import import_chatgpt_export
         pack = import_chatgpt_export(path, pack_name=pack_name, scope=scope)
+    elif source == ImportSource.CLAUDE:
+        from aura.importers.claude import import_claude_export
+        pack = import_claude_export(path, pack_name=pack_name, scope=scope)
+    elif source == ImportSource.CLAUDE:
+        from aura.importers.claude import import_claude_export
+        pack = import_claude_export(path, pack_name=pack_name, scope=scope)
 
     saved_path = save_pack(pack)
 

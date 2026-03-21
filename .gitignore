@@ -15,4 +15,3 @@ env/
 *.so
 .DS_Store
 Thumbs.db
-.venv/

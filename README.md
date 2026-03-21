@@ -133,7 +133,7 @@ aura serve
 | `aura show <name>` | Display a pack |
 | `aura edit <name>` | Open in $EDITOR |
 | `aura export <names...> -f <format>` | Export to platform format |
-| `aura import -s <source> <file>` | Import from ChatGPT export |
+| `aura import -s <source> <file>` | Import from ChatGPT or Claude export |
 | `aura diff <a> <b>` | Compare two packs |
 | `aura doctor` | Check pack health — bloat, stale facts, duplicates |
 | `aura setup` | Auto-configure Claude Desktop + Cursor |
@@ -248,18 +248,20 @@ aura serve --token $AURA_TOKEN --packs developer --read-only
 - [x] `aura scan` — auto-detect stack from machine
 - [x] `aura onboard` — 5-question interactive setup
 - [x] `aura quickstart` — full onboarding in one command
-- [x] `aura setup` — auto-configure Claude Desktop + Cursor
+- [x] `aura setup` — auto-configure Claude Desktop + Cursor + Gemini CLI
 - [x] `aura doctor` — pack health checker
 - [x] `aura add` — add facts without editing YAML
 - [x] MCP server with resources, tools, and prompts
 - [x] 4 export formats: system-prompt, cursorrules, claude-memory, chatgpt-instructions
 - [x] ChatGPT import (heuristic extraction)
+- [x] Claude conversation import (heuristic extraction)
 - [x] LLM-powered deep extraction
 - [x] Diff engine
-- [x] 65+ tests, CI, MIT license
-- [ ] Claude conversation import
+- [x] Token-efficient compact profile (`get_user_profile` tool)
+- [x] 74 tests, CI, MIT license
 - [ ] AGENTS.md export
 - [ ] `aura watch` — suggest new facts from recent conversations
+- [ ] Hot sync — file watcher for live pack updates
 - [ ] Web dashboard for visual pack editing
 - [ ] Chrome extension for claude.ai / chatgpt.com
 

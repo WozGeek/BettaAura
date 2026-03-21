@@ -732,3 +732,309 @@ class TestDoctor:
         report = diagnose([dev_pack])
         text = format_report(report)
         assert "score" in text.lower() or "Health" in text
+
+
+# ---------------------------------------------------------------------------
+# Claude Importer Tests
+# ---------------------------------------------------------------------------
+class TestClaudeImporter:
+    def test_import_chat_messages_format(self, tmp_path):
+        """Test Claude export with chat_messages format."""
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "uuid": "abc-123",
+                "name": "Test conversation",
+                "chat_messages": [
+                    {"sender": "human", "text": "I use Python and TypeScript for my projects"},
+                    {"sender": "assistant", "text": "Great! Those are solid choices."},
+                    {"sender": "human", "text": "I'm building a Next.js app with Supabase"},
+                ],
+            }
+        ]
+
+        json_path = tmp_path / "conversations.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path)
+        assert pack.name == "claude-import"
+        assert len(pack.facts) > 0
+
+        # Should detect languages
+        lang_facts = [f for f in pack.facts if "languages" in f.key]
+        assert len(lang_facts) > 0
+
+    def test_import_messages_format(self, tmp_path):
+        """Test generic messages format."""
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "messages": [
+                    {"role": "user", "content": "Je travaille avec React et FastAPI"},
+                    {"role": "assistant", "content": "OK"},
+                    {"role": "user", "content": "Mon éditeur préféré est Cursor"},
+                ],
+            }
+        ]
+
+        json_path = tmp_path / "conversations.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path)
+        assert len(pack.facts) > 0
+
+        # Should detect French
+        style_facts = [f for f in pack.facts if "style.language" in f.key]
+        assert len(style_facts) > 0
+
+    def test_import_zip(self, tmp_path):
+        """Test import from ZIP file."""
+        import zipfile as zf
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "chat_messages": [
+                    {"sender": "human", "text": "I code in Rust and Go"},
+                ]
+            }
+        ]
+
+        json_path = tmp_path / "conversations.json"
+        json_path.write_text(json.dumps(data))
+
+        zip_path = tmp_path / "export.zip"
+        with zf.ZipFile(zip_path, "w") as z:
+            z.write(json_path, "conversations.json")
+
+        pack = import_claude_export(zip_path)
+        assert len(pack.facts) > 0
+
+    def test_import_empty(self, tmp_path):
+        """Test import with no user messages."""
+        from aura.importers.claude import import_claude_export
+
+        data = [{"chat_messages": []}]
+        json_path = tmp_path / "conversations.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path)
+        assert len(pack.facts) == 0
+
+
+# ---------------------------------------------------------------------------
+# Compact Profile Tests
+# ---------------------------------------------------------------------------
+class TestCompactProfile:
+    def test_compact_profile_output(self):
+        from aura.mcp_server import _compact_profile
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+
+        pack = ContextPack(
+            name="test",
+            scope="developer",
+            facts=[
+                Fact(key="identity.name", value="Nok", type=FactType.IDENTITY, confidence=Confidence.HIGH),
+                Fact(key="languages.primary", value=["Python", "TypeScript"], type=FactType.SKILL, confidence=Confidence.HIGH),
+            ],
+            meta=PackMeta(description="Test"),
+        )
+
+        result = _compact_profile([pack])
+        assert "Nok" in result
+        assert "Python" in result
+        assert len(result) < 500  # Should be compact
+
+    def test_compact_profile_max_facts(self):
+        from aura.mcp_server import _compact_profile
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+
+        facts = [
+            Fact(key=f"pref.item{i}", value=f"value{i}", type=FactType.PREFERENCE, confidence=Confidence.LOW)
+            for i in range(50)
+        ]
+
+        pack = ContextPack(
+            name="test",
+            scope="general",
+            facts=facts,
+            meta=PackMeta(description="Test"),
+        )
+
+        result_full = _compact_profile([pack])
+        result_limited = _compact_profile([pack], max_facts=5)
+        assert len(result_limited) < len(result_full)
+
+    def test_compact_profile_empty(self):
+        from aura.mcp_server import _compact_profile
+        result = _compact_profile([])
+        assert "No user context" in result
+
+
+# ---------------------------------------------------------------------------
+# Claude Importer
+# ---------------------------------------------------------------------------
+class TestClaudeImporter:
+    def test_import_claude_chat_messages(self, tmp_path):
+        """Test importing Claude export with chat_messages format."""
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "name": "Python help",
+                "chat_messages": [
+                    {"sender": "human", "text": "Help me write a Python script for web scraping"},
+                    {"sender": "assistant", "text": "Sure, here's a script using BeautifulSoup..."},
+                    {"sender": "human", "text": "Can you use TypeScript and Next.js instead?"},
+                ],
+            },
+            {
+                "name": "Rust question",
+                "chat_messages": [
+                    {"sender": "human", "text": "How do I use cargo to build a Rust project?"},
+                ],
+            },
+        ]
+
+        json_path = tmp_path / "conversations.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path, pack_name="test-claude")
+        assert pack.name == "test-claude"
+        assert len(pack.facts) > 0
+
+        # Should detect languages
+        lang_facts = [f for f in pack.facts if "languages" in f.key]
+        assert len(lang_facts) > 0
+        langs = lang_facts[0].value
+        assert "Python" in langs
+
+    def test_import_claude_messages_format(self, tmp_path):
+        """Test importing with standard messages array."""
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "messages": [
+                    {"role": "user", "content": "I'm building a React dashboard with Supabase"},
+                    {"role": "assistant", "content": "Great choice!"},
+                ],
+            },
+        ]
+
+        json_path = tmp_path / "claude.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path)
+        fw_facts = [f for f in pack.facts if "frameworks" in f.key]
+        assert len(fw_facts) > 0
+        assert "React" in fw_facts[0].value or "Supabase" in fw_facts[0].value
+
+    def test_import_claude_zip(self, tmp_path):
+        """Test importing from ZIP file."""
+        import zipfile
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "chat_messages": [
+                    {"sender": "human", "text": "I use Django and PostgreSQL for my backend"},
+                ],
+            },
+        ]
+
+        json_path = tmp_path / "conversations.json"
+        json_path.write_text(json.dumps(data))
+
+        zip_path = tmp_path / "export.zip"
+        with zipfile.ZipFile(zip_path, "w") as zf:
+            zf.write(json_path, "conversations.json")
+
+        pack = import_claude_export(zip_path)
+        assert len(pack.facts) > 0
+
+    def test_import_claude_empty(self, tmp_path):
+        """Test importing empty conversations."""
+        from aura.importers.claude import import_claude_export
+
+        json_path = tmp_path / "empty.json"
+        json_path.write_text("[]")
+
+        pack = import_claude_export(json_path)
+        assert pack.name == "claude-import"
+        assert len(pack.facts) == 0
+
+    def test_import_claude_style_detection(self, tmp_path):
+        """Test communication style detection."""
+        from aura.importers.claude import import_claude_export
+
+        # Lots of short messages
+        data = [
+            {
+                "chat_messages": [
+                    {"sender": "human", "text": "fix this"},
+                    {"sender": "human", "text": "run it"},
+                    {"sender": "human", "text": "show me"},
+                    {"sender": "human", "text": "try again"},
+                    {"sender": "human", "text": "that works"},
+                ] * 5,
+            },
+        ]
+
+        json_path = tmp_path / "style.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path)
+        style_facts = [f for f in pack.facts if "style" in f.key]
+        assert len(style_facts) > 0
+
+    def test_import_claude_french_detection(self, tmp_path):
+        """Test French language detection."""
+        from aura.importers.claude import import_claude_export
+
+        data = [
+            {
+                "chat_messages": [
+                    {"sender": "human", "text": "Je veux créer une application web avec React"},
+                    {"sender": "human", "text": "Est-ce que tu peux m'aider avec le backend?"},
+                    {"sender": "human", "text": "Je travaille dans une entreprise de technologie"},
+                    {"sender": "human", "text": "Comment est-ce que je peux déployer sur Vercel?"},
+                    {"sender": "human", "text": "Merci pour ton aide, c'est exactement ce que je cherchais"},
+                ],
+            },
+        ]
+
+        json_path = tmp_path / "french.json"
+        json_path.write_text(json.dumps(data))
+
+        pack = import_claude_export(json_path)
+        style_facts = [f for f in pack.facts if "language" in f.key and f.key.startswith("style")]
+        assert len(style_facts) > 0
+        assert "French" in style_facts[0].value
+
+
+# ---------------------------------------------------------------------------
+# Compact Profile (Token Efficiency)
+# ---------------------------------------------------------------------------
+class TestCompactProfile:
+    def test_compact_profile_basic(self, dev_pack):
+        from aura.mcp_server import _compact_profile
+        result = _compact_profile([dev_pack])
+        assert isinstance(result, str)
+        assert len(result) > 0
+        # Should be much shorter than full export
+        full = export_system_prompt([dev_pack], include_header=False)
+        assert len(result) < len(full)
+
+    def test_compact_profile_with_max_facts(self, dev_pack):
+        from aura.mcp_server import _compact_profile
+        result_all = _compact_profile([dev_pack])
+        result_limited = _compact_profile([dev_pack], max_facts=1)
+        assert len(result_limited) <= len(result_all)
+
+    def test_compact_profile_empty(self):
+        from aura.mcp_server import _compact_profile
+        result = _compact_profile([])
+        assert "No user context" in result

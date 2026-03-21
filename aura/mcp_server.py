@@ -104,6 +104,55 @@ def _is_pack_allowed(pack_name: str) -> bool:
     return pack_name in _ALLOWED_PACKS
 
 
+def _compact_profile(packs: list, max_facts: int | None = None) -> str:
+    """Generate a compact user profile from all packs. Optimized for token efficiency."""
+    lines = []
+
+    # Identity facts first (highest value per token)
+    identity = []
+    skills = []
+    preferences = []
+    rules = []
+
+    for pack in packs:
+        facts = pack.facts
+        if max_facts:
+            facts = sorted(
+                facts,
+                key=lambda f: (
+                    0 if f.confidence == Confidence.HIGH else
+                    1 if f.confidence == Confidence.MEDIUM else 2
+                ),
+            )[:max_facts]
+
+        for fact in facts:
+            val = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
+            entry = f"{fact.key}: {val}"
+            if fact.key.startswith("identity") or fact.key in ("role", "role.founder", "role.student", "role.employment"):
+                identity.append(entry)
+            elif fact.type in ("skill",) or fact.key in ("languages.primary", "frameworks", "editor", "ai_tools"):
+                skills.append(entry)
+            else:
+                preferences.append(entry)
+
+        for rule in pack.rules:
+            rules.append(rule.instruction)
+
+    if identity:
+        lines.append("Identity: " + " | ".join(identity))
+    if skills:
+        lines.append("Stack: " + " | ".join(skills))
+    if preferences:
+        lines.append("Context: " + " | ".join(preferences[:10]))  # Cap at 10
+    if rules:
+        lines.append("Rules: " + " | ".join(rules[:5]))  # Cap at 5
+
+    if not lines:
+        return "No user context available."
+
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # MCP Protocol constants
 # ---------------------------------------------------------------------------
@@ -147,8 +196,25 @@ TOOLS = [
                     "items": {"type": "string"},
                     "description": "Optional: filter to specific scopes. Empty = all.",
                 },
+                "max_facts": {
+                    "type": "integer",
+                    "description": "Max facts per pack (default: all). Use 10-20 for token efficiency.",
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "If true, returns a compact summary instead of full export. Saves tokens.",
+                },
             },
         },
+    },
+    {
+        "name": "get_user_profile",
+        "description": (
+            "Get a compact summary of the user — identity, stack, style, rules. "
+            "Much shorter than get_all_context. Use this when you just need the basics. "
+            "Typically under 500 tokens."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "search_context",
@@ -240,7 +306,30 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
             packs = [p for p in packs if p.scope in scopes]
         if not packs:
             return [{"type": "text", "text": "No context packs found."}]
+
+        max_facts = arguments.get("max_facts")
+        compact = arguments.get("compact", False)
+
+        if compact:
+            return [{"type": "text", "text": _compact_profile(packs, max_facts)}]
+
+        if max_facts:
+            # Trim facts per pack — keep highest confidence first
+            for pack in packs:
+                sorted_facts = sorted(
+                    pack.facts,
+                    key=lambda f: (
+                        0 if f.confidence == Confidence.HIGH else
+                        1 if f.confidence == Confidence.MEDIUM else 2
+                    ),
+                )
+                pack.facts = sorted_facts[:max_facts]
+
         return [{"type": "text", "text": export_system_prompt(packs, include_header=False)}]
+
+    elif name == "get_user_profile":
+        packs = _filter_packs(list_packs())
+        return [{"type": "text", "text": _compact_profile(packs)}]
 
     elif name == "search_context":
         query = arguments["query"].lower()
