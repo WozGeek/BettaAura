@@ -3,394 +3,231 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>aura — Your AI tools don't talk to each other. We fix that.</title>
-<meta name="description" content="Open-source CLI that scans your machine, builds your AI identity, and serves it to Claude, ChatGPT, Cursor, and Gemini via MCP.">
+<title>aura — Portable AI Context</title>
+<meta name="description" content="One identity across Claude, ChatGPT, Cursor, and Gemini. Open-source CLI that makes your AI context portable via MCP.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #060608;
-  --bg-elevated: #0c0c11;
-  --bg-card: #101015;
-  --bg-card-hover: #16161d;
-  --border: #1c1c28;
-  --border-hover: #2c2c3a;
-  --text: #eaeaef;
-  --text-dim: #7a7a8e;
-  --text-muted: #44444f;
-  --accent: #a78bfa;
-  --accent-bright: #c4b5fd;
-  --accent-dim: rgba(167,139,250,0.10);
-  --accent-glow: rgba(167,139,250,0.04);
-  --green: #34d399;
-  --green-dim: rgba(52,211,153,0.10);
-  --yellow: #fbbf24;
-  --red: #f87171;
-  --cyan: #67e8f9;
-  --code-bg: #09090d;
-}
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',-apple-system,sans-serif;font-weight:400;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
-a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
-.container{max-width:1000px;margin:0 auto;padding:0 24px}
+:root{
+  --bg:#0a0a0b;--surface:#111113;--border:#1e1e22;
+  --text:#e8e6e3;--muted:#8a8880;--accent:#5b9bf7;
+  --green:#4ade80;--amber:#fbbf24;--mono:'JetBrains Mono',monospace;
+  --serif:'Source Serif 4',Georgia,serif;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:720px;margin:0 auto;padding:0 24px}
 
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 28px;display:flex;justify-content:space-between;align-items:center;background:rgba(6,6,8,0.82);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
-.nav-brand{font-family:'Instrument Serif',serif;font-size:22px;font-style:italic;color:var(--accent);letter-spacing:-0.02em}
-.nav-links{display:flex;gap:24px;align-items:center}
-.nav-links a{color:var(--text-dim);font-size:13px;font-weight:500;text-decoration:none;transition:color .2s}
-.nav-links a:hover{color:var(--text);text-decoration:none}
-.nav-cta{background:var(--accent)!important;color:var(--bg)!important;padding:7px 18px;border-radius:6px;font-size:13px!important;font-weight:600;transition:opacity .2s}
-.nav-cta:hover{opacity:.9}
+/* Hero */
+.hero{padding:80px 0 40px;text-align:center}
+.hero-logo{font-size:3rem;font-weight:600;letter-spacing:-0.03em;margin-bottom:8px}
+.hero-logo span{color:var(--accent)}
+.hero-sub{font-family:var(--serif);font-size:1.15rem;color:var(--muted);font-style:italic;margin-bottom:32px}
+.hero-install{display:inline-block;background:var(--surface);border:1px solid var(--border);padding:12px 28px;border-radius:8px;font-size:0.95rem;cursor:pointer;transition:border-color 0.2s}
+.hero-install:hover{border-color:var(--accent)}
+.hero-install code{color:var(--green)}
+.hero-badges{margin-top:24px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hero-badges img{height:20px}
 
-/* HERO */
-.hero{padding:160px 0 50px;text-align:center;position:relative}
-.hero::before{content:'';position:absolute;top:40px;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(167,139,250,0.06) 0%,transparent 60%);pointer-events:none}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;background:var(--green-dim);border:1px solid rgba(52,211,153,0.18);border-radius:100px;font-size:12px;color:var(--green);margin-bottom:28px;font-weight:600}
-.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(38px,6.5vw,72px);font-weight:400;line-height:1.08;letter-spacing:-0.035em;margin-bottom:22px}
-.hero h1 em{font-style:italic;color:var(--accent)}
-.hero-sub{font-size:17px;color:var(--text-dim);max-width:540px;margin:0 auto 40px;line-height:1.75;font-weight:300}
-.hero-install{display:inline-flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);padding:14px 24px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text);cursor:pointer;transition:all .2s}
-.hero-install:hover{border-color:var(--accent);transform:translateY(-1px)}
-.hero-install .prompt{color:var(--accent)}
-.hero-install .copy-hint{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);padding:2px 8px;background:var(--bg);border-radius:4px;transition:all .2s}
+/* Section */
+section{padding:48px 0;border-top:1px solid var(--border)}
+section h2{font-size:1.2rem;font-weight:600;margin-bottom:20px;letter-spacing:-0.02em}
+section h2::before{content:'✦ ';color:var(--accent)}
+section p{color:var(--muted);margin-bottom:16px;font-size:0.88rem;line-height:1.8}
 
-/* TOOLS BAR */
-.tools-bar{padding:28px 0 10px;text-align:center}
-.tools-bar p{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600;margin-bottom:14px}
-.tools-logos{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;align-items:center}
-.tools-logos span{font-size:14px;color:var(--text-dim);font-weight:500;opacity:.7;transition:opacity .2s}
-.tools-logos span:hover{opacity:1;color:var(--text)}
+/* Terminal */
+.terminal{background:#0d0d0f;border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin:16px 0 24px;font-size:0.82rem;line-height:1.9;overflow-x:auto}
+.terminal .prompt{color:var(--green)}
+.terminal .comment{color:#555}
+.terminal .output{color:var(--muted)}
+.terminal .flag{color:var(--amber)}
 
-/* DEMO */
-.demo-section{padding:40px 0 80px}
-.demo-window{background:var(--code-bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-width:680px;margin:0 auto;box-shadow:0 30px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(167,139,250,0.04)}
-.demo-titlebar{display:flex;align-items:center;gap:7px;padding:12px 16px;background:var(--bg-elevated);border-bottom:1px solid var(--border)}
-.demo-dot{width:10px;height:10px;border-radius:50%}
-.demo-dot:nth-child(1){background:#ff5f56}.demo-dot:nth-child(2){background:#ffbd2e}.demo-dot:nth-child(3){background:#27c93f}
-.demo-title{margin-left:12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted)}
-.demo-body{padding:20px 22px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.85;color:var(--text-dim);white-space:pre;overflow-x:auto}
-.demo-body .p{color:var(--accent)}.demo-body .c{color:var(--green)}.demo-body .h{color:var(--text)}.demo-body .a{color:var(--accent)}.demo-body .d{color:var(--text-muted)}
+/* Grid */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:20px 0}
+.tool-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;font-size:0.82rem}
+.tool-card strong{display:block;margin-bottom:4px;color:var(--text);font-size:0.88rem}
+.tool-card span{color:var(--muted);font-size:0.75rem}
+.tool-badge{display:inline-block;font-size:0.65rem;padding:2px 8px;border-radius:10px;margin-top:8px;font-weight:500}
+.badge-auto{background:#1a3a1a;color:var(--green)}
+.badge-manual{background:#3a2a1a;color:var(--amber)}
 
-/* PROBLEM */
-.problem{padding:80px 0;border-top:1px solid var(--border)}
-.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
-.problem h2{font-family:'Instrument Serif',serif;font-size:34px;line-height:1.2;letter-spacing:-0.02em;margin-bottom:18px}
-.problem p{color:var(--text-dim);font-size:15px;margin-bottom:12px}
-.problem-tagline{color:var(--accent)!important;font-weight:500!important;margin-top:20px!important}
-.problem-visual{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;font-family:'JetBrains Mono',monospace;font-size:12px}
-.platform-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
-.platform-row:last-child{border-bottom:none}
-.platform-name{color:var(--text-dim);width:72px;font-weight:500}
-.platform-bar{height:7px;border-radius:4px}
-.platform-label{color:var(--text-muted);font-size:10.5px;flex-shrink:0;font-family:'DM Sans',sans-serif}
-.problem-footer{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);text-align:center}
-.problem-footer span{color:var(--text-muted);font-size:11.5px;font-style:italic}
+/* Features */
+.features{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.feature{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.feature strong{display:block;font-size:0.85rem;margin-bottom:4px}
+.feature p{font-size:0.78rem;margin:0;color:var(--muted)}
 
-/* SECTION LABEL */
-.section-label{text-align:center;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+/* Commands table */
+.cmd-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:16px 0}
+.cmd-table th{text-align:left;color:var(--muted);font-weight:400;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em}
+.cmd-table td{padding:6px 0;border-bottom:1px solid #141416}
+.cmd-table td:first-child{color:var(--green);white-space:nowrap;padding-right:20px}
 
-/* HOW */
-.how{padding:80px 0;border-top:1px solid var(--border)}
-.how h2{font-family:'Instrument Serif',serif;font-size:34px;letter-spacing:-0.02em;margin-bottom:48px;text-align:center}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.step{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px;transition:all .25s}
-.step:hover{border-color:var(--border-hover);transform:translateY(-2px)}
-.step-num{font-family:'Instrument Serif',serif;font-size:36px;color:var(--accent);margin-bottom:10px;font-style:italic;line-height:1}
-.step h3{font-size:15px;font-weight:600;margin-bottom:8px}.step p{font-size:13px;color:var(--text-dim);line-height:1.65}
-.step code{display:block;margin-top:14px;background:var(--code-bg);padding:12px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text-dim);white-space:pre;overflow-x:auto;line-height:1.7}
-.step code .cmd{color:var(--green)}.step code .cmt{color:var(--text-muted)}.step code .arg{color:var(--cyan)}.step code .flag{color:var(--yellow)}
+/* Footer */
+footer{padding:48px 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:0.75rem}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--text)}
 
-/* TOOLS GRID */
-.tools-section{padding:80px 0;border-top:1px solid var(--border)}
-.tools-section h2{font-family:'Instrument Serif',serif;font-size:34px;letter-spacing:-0.02em;margin-bottom:14px;text-align:center}
-.tools-sub{text-align:center;color:var(--text-dim);margin-bottom:40px;font-size:15px}
-.tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:700px;margin:0 auto}
-.tool-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;display:flex;gap:16px;align-items:flex-start;transition:all .25s}
-.tool-card:hover{border-color:var(--border-hover);transform:translateY(-1px)}
-.tool-icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);border-radius:10px;font-size:18px;color:var(--accent);flex-shrink:0}
-.tool-info h3{font-size:15px;font-weight:600;margin-bottom:4px}
-.tool-info p{font-size:12px;color:var(--text-dim);line-height:1.5}
-.tool-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;margin-top:6px}
-.badge-auto{background:var(--green-dim);color:var(--green)}
-.badge-manual{background:rgba(251,191,36,0.10);color:var(--yellow)}
-
-/* MCP */
-.mcp-section{padding:80px 0;border-top:1px solid var(--border)}
-.mcp-content{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start}
-.mcp-content h2{font-family:'Instrument Serif',serif;font-size:34px;letter-spacing:-0.02em;margin-bottom:16px}
-.mcp-content h2 em{font-style:italic;color:var(--accent)}
-.mcp-content p{color:var(--text-dim);font-size:15px;margin-bottom:12px;line-height:1.7}
-.mcp-config{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.mcp-config+.mcp-config{margin-top:14px}
-.mcp-config-title{padding:10px 16px;background:var(--bg-elevated);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border)}
-.mcp-config pre{padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.8;color:var(--text-dim);overflow-x:auto}
-
-/* CTA */
-.cta{padding:100px 0;border-top:1px solid var(--border);text-align:center}
-.cta h2{font-family:'Instrument Serif',serif;font-size:clamp(32px,5vw,48px);letter-spacing:-0.02em;margin-bottom:16px}
-.cta h2 em{font-style:italic;color:var(--accent)}
-.cta p{color:var(--text-dim);font-size:16px;max-width:460px;margin:0 auto 32px}
-.cta-buttons{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:var(--accent);color:var(--bg);font-weight:600;font-size:14px;border-radius:8px;text-decoration:none;transition:all .2s}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px);text-decoration:none}
-.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:var(--bg-card);color:var(--text);font-weight:500;font-size:14px;border-radius:8px;border:1px solid var(--border);text-decoration:none;transition:all .2s}
-.btn-secondary:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
-
-/* FOOTER */
-footer{padding:36px 0;border-top:1px solid var(--border);text-align:center}
-.footer-brand{font-family:'Instrument Serif',serif;font-style:italic;color:var(--accent);font-size:18px;margin-bottom:6px}
-footer p{color:var(--text-muted);font-size:13px}footer a{color:var(--text-dim)}
-
-/* RESPONSIVE */
-@media(max-width:768px){.problem-grid,.mcp-content{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.tool-grid{grid-template-columns:1fr}.hero{padding:130px 0 40px}.hero h1{font-size:34px}nav{padding:12px 16px}.nav-links a:not(.nav-cta){display:none}.problem h2,.how h2,.tools-section h2,.mcp-content h2{font-size:28px}.hero-install{font-size:12px;padding:12px 18px}.cta{padding:70px 0}.tools-logos{gap:16px}}
-@media(max-width:420px){.hero h1{font-size:28px}.container{padding:0 16px}}
-
-/* ANIMATIONS */
-@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-.hero-badge,.hero h1,.hero-sub,.hero-install{animation:fadeUp .6s ease-out both}
-.hero-badge{animation-delay:0s}.hero h1{animation-delay:.08s}.hero-sub{animation-delay:.16s}.hero-install{animation-delay:.24s}
-.demo-window{animation:fadeUp .7s ease-out .38s both}
+/* Mobile */
+@media(max-width:600px){
+  .hero{padding:48px 0 32px}
+  .hero-logo{font-size:2.2rem}
+  .features{grid-template-columns:1fr}
+  .tools-grid{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="nav-brand">✦ aura</div>
-  <div class="nav-links">
-    <a href="#how">How it works</a>
-    <a href="#tools">Tools</a>
-    <a href="#mcp">MCP</a>
-    <a href="https://github.com/WozGeek/BettaAura" class="nav-cta">GitHub</a>
-  </div>
-</nav>
+<div class="container">
 
-<section class="hero">
-  <div class="container">
-    <div class="hero-badge">v0.2 · Open source · MIT</div>
-    <h1>Your AI tools don't<br>talk to <em>each other</em></h1>
-    <p class="hero-sub">aura scans your machine, builds your AI identity, and serves it to every tool via MCP. Define yourself once. Claude, ChatGPT, Cursor, Gemini — they all know you.</p>
-    <div class="hero-install" onclick="navigator.clipboard.writeText('pip install aura-ctx').then(()=>{this.querySelector('.copy-hint').textContent='copied ✓';setTimeout(()=>{this.querySelector('.copy-hint').textContent='click to copy'},2000)})">
-      <span class="prompt">$</span> pip install aura-ctx
-      <span class="copy-hint">click to copy</span>
+  <div class="hero">
+    <div class="hero-logo"><span>✦</span> aura</div>
+    <div class="hero-sub">Your portable AI context. One identity across every tool.</div>
+    <div class="hero-install" onclick="navigator.clipboard.writeText('pip install aura-ctx').then(()=>this.querySelector('small').textContent=' copied!')">
+      <code>pip install aura-ctx</code> <small style="color:var(--muted);font-size:0.75rem"></small>
+    </div>
+    <div class="hero-badges">
+      <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=blue&label=PyPI" /></a>
+      <a href="https://github.com/WozGeek/BettaAura"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/BettaAura?style=flat" /></a>
+      <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
     </div>
   </div>
-</section>
 
-<section class="tools-bar">
-  <div class="container">
-    <p>Works with</p>
-    <div class="tools-logos">
-      <span>Claude Desktop</span>
-      <span>ChatGPT</span>
-      <span>Cursor</span>
-      <span>Gemini CLI</span>
-      <span>Windsurf</span>
-      <span>Any MCP client</span>
+  <section>
+    <h2>The Problem</h2>
+    <p>Every AI tool builds a separate picture of who you are. Claude knows your stack. ChatGPT knows your preferences. Cursor reads your code. None of them share context. None of them let you export it.</p>
+    <p>aura scans your machine, builds your identity as structured YAML, and serves it to every MCP-compatible tool. One command. 30 seconds.</p>
+  </section>
+
+  <section>
+    <h2>Quick Start</h2>
+    <div class="terminal">
+      <span class="prompt">$</span> pip install aura-ctx<br>
+      <span class="prompt">$</span> aura quickstart<br><br>
+      <span class="output">✦ Scanning your machine...</span><br>
+      <span class="output">  Found: TypeScript, Python, Next.js, FastAPI, Cursor, Node.js</span><br>
+      <span class="output">  Projects: aura, kipedia, hotepia</span><br>
+      <span class="output">✦ Pack saved: developer (12 facts)</span><br><br>
+      <span class="output">✦ Starting MCP server on localhost:3847</span><br>
+      <span class="output">  Serving 3 context packs</span><br>
+      <span class="output">  Claude Desktop ✓  Cursor ✓  Gemini CLI ✓</span>
     </div>
-  </div>
-</section>
+    <p>That's it. Open any AI tool. It already knows you.</p>
+  </section>
 
-<section class="demo-section">
-  <div class="container">
-    <div class="demo-window">
-      <div class="demo-titlebar">
-        <div class="demo-dot"></div><div class="demo-dot"></div><div class="demo-dot"></div>
-        <span class="demo-title">terminal — aura</span>
-      </div>
-      <div class="demo-body"><span class="p">$</span> <span class="c">aura scan</span> ~/Documents
-
-<span class="a">✦</span> <span class="h">Scan complete</span>
-
-<span>  ● identity.name: Enoch A.</span>
-<span>  ● editor: Cursor</span>
-<span>  ● ai_tools: Claude Desktop, Cursor</span>
-<span>  ● languages.primary: TypeScript, JavaScript, Python</span>
-<span>  ● frameworks: Next.js, React, Tailwind, Supabase, FastAPI</span>
-<span>  ● projects.recent: elison, aura, hotepia</span>
-
-<span class="a">✦</span> <span class="h">Saved: developer</span> <span class="d">(12 facts auto-detected)</span>
-
-<span class="p">$</span> <span class="c">aura serve</span>
-
-<span class="a">✦</span> <span class="h">MCP server running</span> <span class="d">— localhost:3847</span>
-<span>  Serving 3 context packs</span>
-<span>  Claude, ChatGPT, Cursor, Gemini connected</span>
-
-<span class="d">  Open any AI. Ask anything. It already knows you.</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="problem">
-  <div class="container">
-    <div class="problem-grid">
-      <div>
-        <h2>Each AI builds a different picture of you</h2>
-        <p>Claude remembers your coding style. ChatGPT knows your writing tone. Cursor has your framework prefs. Gemini starts from zero.</p>
-        <p>Switch tools? Re-explain everything. Switch accounts? Gone. Platform memories are black boxes you can't version, audit, or export.</p>
-        <p class="problem-tagline">MCP solved tool interoperability.<br>aura solves context interoperability.</p>
-      </div>
-      <div class="problem-visual">
-        <div class="platform-row">
-          <span class="platform-name">Claude</span>
-          <div class="platform-bar" style="width:120px;background:var(--accent)"></div>
-          <span class="platform-label">knows your code style</span>
-        </div>
-        <div class="platform-row">
-          <span class="platform-name">ChatGPT</span>
-          <div class="platform-bar" style="width:90px;background:var(--green)"></div>
-          <span class="platform-label">knows your writing tone</span>
-        </div>
-        <div class="platform-row">
-          <span class="platform-name">Cursor</span>
-          <div class="platform-bar" style="width:70px;background:var(--cyan)"></div>
-          <span class="platform-label">knows your framework</span>
-        </div>
-        <div class="platform-row">
-          <span class="platform-name">Gemini</span>
-          <div class="platform-bar" style="width:40px;background:var(--yellow)"></div>
-          <span class="platform-label">knows nothing</span>
-        </div>
-        <div class="problem-footer"><span>None of them talk to each other.</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="how" id="how">
-  <div class="container">
-    <div class="section-label">How it works</div>
-    <h2>Three steps. Every AI knows you.</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>Scan your machine</h3>
-        <p>aura detects your languages, frameworks, tools, projects, and editor automatically. Zero YAML required.</p>
-        <code><span class="cmd">aura</span> scan
-<span class="cmt"># or the full flow:</span>
-<span class="cmd">aura</span> quickstart</code>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>Answer 5 questions</h3>
-        <p>Your role, communication style, current priorities, and rules. 2 minutes to capture what scanning can't.</p>
-        <code><span class="cmd">aura</span> onboard
-
-<span class="cmt"># or add facts directly:</span>
-<span class="cmd">aura</span> add dev <span class="arg">tone</span> <span class="flag">"Direct"</span></code>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>Serve via MCP</h3>
-        <p>Start the MCP server. Claude, ChatGPT, Cursor, and Gemini read your context automatically.</p>
-        <code><span class="cmd">aura</span> setup <span class="cmt"># config tools</span>
-<span class="cmd">aura</span> serve <span class="cmt"># start MCP</span></code>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="tools-section" id="tools">
-  <div class="container">
-    <div class="section-label">Supported Tools</div>
-    <h2>One server. Every AI tool.</h2>
-    <p class="tools-sub">`aura serve` runs a standard MCP server. Any MCP-compatible client connects instantly.</p>
-    <div class="tool-grid">
+  <section>
+    <h2>Works With</h2>
+    <div class="tools-grid">
       <div class="tool-card">
-        <div class="tool-icon">✦</div>
-        <div class="tool-info">
-          <h3>Claude Desktop</h3>
-          <p>`aura setup` writes the config automatically. Restart Claude and it knows you.</p>
-          <span class="tool-badge badge-auto">Auto-configured</span>
-        </div>
+        <strong>Claude Desktop</strong>
+        <span>Streamable HTTP</span><br>
+        <span class="tool-badge badge-auto">Auto-configured</span>
       </div>
       <div class="tool-card">
-        <div class="tool-icon">◎</div>
-        <div class="tool-info">
-          <h3>ChatGPT Desktop</h3>
-          <p>Enable Developer Mode, add the SSE endpoint. Requires Plus or Pro subscription.</p>
-          <span class="tool-badge badge-manual">Developer Mode</span>
-        </div>
+        <strong>Cursor IDE</strong>
+        <span>Streamable HTTP</span><br>
+        <span class="tool-badge badge-auto">Auto-configured</span>
       </div>
       <div class="tool-card">
-        <div class="tool-icon">⌘</div>
-        <div class="tool-info">
-          <h3>Cursor IDE</h3>
-          <p>`aura setup` writes the config automatically. Your code context follows you.</p>
-          <span class="tool-badge badge-auto">Auto-configured</span>
-        </div>
+        <strong>Gemini CLI</strong>
+        <span>SSE</span><br>
+        <span class="tool-badge badge-auto">Auto-configured</span>
       </div>
       <div class="tool-card">
-        <div class="tool-icon">◇</div>
-        <div class="tool-info">
-          <h3>Gemini CLI</h3>
-          <p>`aura setup` writes the config automatically, or run `gemini mcp add`.</p>
-          <span class="tool-badge badge-auto">Auto-configured</span>
-        </div>
+        <strong>ChatGPT</strong>
+        <span>SSE / Dev Mode</span><br>
+        <span class="tool-badge badge-manual">Manual setup</span>
       </div>
     </div>
-  </div>
-</section>
+    <p>Any MCP-compatible client can connect to aura's server at <code style="color:var(--green)">localhost:3847</code>.</p>
+  </section>
 
-<section class="mcp-section" id="mcp">
-  <div class="container">
-    <div class="mcp-content">
-      <div>
-        <div class="section-label" style="text-align:left">MCP Server</div>
-        <h2>The <em>real</em> power:<br>built-in MCP</h2>
-        <p>aura includes a full MCP server. Start it once and every compatible tool — Claude, ChatGPT, Cursor, Gemini — reads your context automatically.</p>
-        <p>No copy-paste. No re-explaining. Your context packs are live resources that AI tools query in real time.</p>
-        <p style="color:var(--text-muted);font-size:13px;margin-top:14px">Works with any tool that supports the Model Context Protocol.</p>
+  <section>
+    <h2>Features</h2>
+    <div class="features">
+      <div class="feature">
+        <strong>Auto-Scan</strong>
+        <p>Detects languages, frameworks, tools, projects, editor, git identity from your machine.</p>
       </div>
-      <div>
-        <div class="mcp-config">
-          <div class="mcp-config-title">Claude Desktop — auto-configured</div>
-          <pre>{ <span style="color:var(--cyan)">"mcpServers"</span>: { <span style="color:var(--green)">"aura"</span>: {
-    <span style="color:var(--cyan)">"command"</span>: <span style="color:var(--green)">"npx"</span>,
-    <span style="color:var(--cyan)">"args"</span>: [<span style="color:var(--green)">"mcp-remote"</span>,
-      <span style="color:var(--green)">"http://localhost:3847/mcp"</span>]
-  }}}</pre>
-        </div>
-        <div class="mcp-config">
-          <div class="mcp-config-title">ChatGPT — Developer Mode</div>
-          <pre><span style="color:var(--text-muted)">Settings → Connectors → Advanced → Developer Mode</span>
-<span style="color:var(--cyan)">SSE URL:</span> <span style="color:var(--green)">http://localhost:3847/sse</span></pre>
-        </div>
-        <div class="mcp-config">
-          <div class="mcp-config-title">Gemini CLI</div>
-          <pre><span style="color:var(--accent)">$</span> gemini mcp add <span style="color:var(--yellow)">--transport</span> sse aura <span style="color:var(--green)">http://localhost:3847/sse</span></pre>
-        </div>
-        <div class="mcp-config">
-          <div class="mcp-config-title">terminal</div>
-          <pre><span style="color:var(--accent)">$</span> aura setup  <span style="color:var(--text-muted)"># auto-config all detected tools</span>
-<span style="color:var(--accent)">$</span> aura serve
-
-<span style="color:var(--green)">✦</span> aura MCP server running — localhost:3847
-  Serving 3 context packs</pre>
-        </div>
+      <div class="feature">
+        <strong>Context Packs</strong>
+        <p>Scoped YAML files — developer, writer, work. Typed facts with confidence levels.</p>
+      </div>
+      <div class="feature">
+        <strong>MCP Server</strong>
+        <p>Full Model Context Protocol server. Resources, tools, prompts. HTTP + SSE.</p>
+      </div>
+      <div class="feature">
+        <strong>Import / Export</strong>
+        <p>Import from ChatGPT & Claude. Export to system-prompt, cursorrules, and more.</p>
+      </div>
+      <div class="feature">
+        <strong>Deep Extraction</strong>
+        <p>Extract facts from conversations using a local LLM via Ollama. Data never leaves your machine.</p>
+      </div>
+      <div class="feature">
+        <strong>Pack Doctor</strong>
+        <p>Detects bloat, stale facts, duplicates, missing rules. Health score 0–100.</p>
+      </div>
+      <div class="feature">
+        <strong>Security</strong>
+        <p>Token auth, scoped serving, read-only mode. Localhost only. No telemetry.</p>
+      </div>
+      <div class="feature">
+        <strong>Local-First</strong>
+        <p>No cloud. No database. No Docker. YAML files on your machine. You own everything.</p>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="cta">
-  <div class="container">
-    <h2>Own your <em>context</em></h2>
-    <p>Local-first. Open source. Your identity stays on your machine. Claude, ChatGPT, Cursor, Gemini — they all read it.</p>
-    <div class="cta-buttons">
-      <a href="https://github.com/WozGeek/BettaAura" class="btn-primary">★ Star on GitHub</a>
-      <a href="https://github.com/WozGeek/BettaAura#quick-start" class="btn-secondary">Read the docs →</a>
+  <section>
+    <h2>Commands</h2>
+    <table class="cmd-table">
+      <tr><th>Command</th><th>Description</th></tr>
+      <tr><td>aura quickstart</td><td>Scan + onboard + configure + serve</td></tr>
+      <tr><td>aura scan</td><td>Auto-detect your stack</td></tr>
+      <tr><td>aura onboard</td><td>5 questions to capture your identity</td></tr>
+      <tr><td>aura serve</td><td>Start MCP server</td></tr>
+      <tr><td>aura setup</td><td>Configure Claude, Cursor, Gemini, ChatGPT</td></tr>
+      <tr><td>aura list</td><td>List all packs</td></tr>
+      <tr><td>aura show &lt;pack&gt;</td><td>Display a pack</td></tr>
+      <tr><td>aura add &lt;pack&gt; &lt;k&gt; &lt;v&gt;</td><td>Add a fact</td></tr>
+      <tr><td>aura doctor</td><td>Health check — bloat, stale, duplicates</td></tr>
+      <tr><td>aura export -f &lt;fmt&gt;</td><td>Export to any format</td></tr>
+      <tr><td>aura import -s &lt;src&gt;</td><td>Import from ChatGPT / Claude</td></tr>
+      <tr><td>aura extract</td><td>LLM-based fact extraction</td></tr>
+      <tr><td>aura diff &lt;a&gt; &lt;b&gt;</td><td>Compare two packs</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Security</h2>
+    <div class="terminal">
+      <span class="comment"># Basic — localhost only</span><br>
+      <span class="prompt">$</span> aura serve<br><br>
+      <span class="comment"># Token auth + read-only + scoped</span><br>
+      <span class="prompt">$</span> aura serve <span class="flag">--token</span> s3cret <span class="flag">--packs</span> developer <span class="flag">--read-only</span>
     </div>
-  </div>
-</section>
+    <p>Binds to 127.0.0.1 only. Optional Bearer token auth. Scoped pack serving. Read-only mode. AURA_TOKEN env var. No telemetry. No analytics. No cloud. Your files, your machine, your rules.</p>
+  </section>
+
+  <section style="text-align:center;padding:64px 0">
+    <div class="terminal" style="display:inline-block;text-align:left">
+      <span class="prompt">$</span> pip install aura-ctx<br>
+      <span class="prompt">$</span> aura quickstart
+    </div>
+    <p style="margin-top:16px"><a href="https://github.com/WozGeek/BettaAura">GitHub</a> · <a href="https://pypi.org/project/aura-ctx/">PyPI</a></p>
+  </section>
+
+</div>
 
 <footer>
   <div class="container">
-    <div class="footer-brand">✦ aura</div>
-    <p>Built by <a href="https://github.com/WozGeek">WozGeek</a> · MIT License · <a href="https://github.com/WozGeek/BettaAura">GitHub</a> · <a href="https://pypi.org/project/aura-ctx/">PyPI</a></p>
+    <p>aura is open-source · <a href="https://github.com/WozGeek/BettaAura">MIT License</a> · Built by <a href="https://github.com/WozGeek">WozGeek</a></p>
   </div>
 </footer>
 

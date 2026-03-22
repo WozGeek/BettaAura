@@ -556,7 +556,7 @@ class TestScanner:
 
     def test_scan_detects_project_names(self, tmp_path):
         from aura.scanner import Scanner
-        for name in ["hotepia", "elison", "aura"]:
+        for name in ["project-a", "project-b", "aura"]:
             (tmp_path / name / ".git").mkdir(parents=True)
             (tmp_path / name / "main.py").write_text("")
 
@@ -566,7 +566,7 @@ class TestScanner:
         proj_facts = [f for f in pack.facts if f.key == "projects.recent"]
         assert len(proj_facts) == 1
         names = proj_facts[0].value
-        assert "hotepia" in names or "elison" in names or "aura" in names
+        assert "project-a" in names or "project-b" in names or "aura" in names
 
     def test_scan_system_info(self):
         from aura.scanner import Scanner

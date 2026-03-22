@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "Nok (Enoch Afanwoubo)", email = "nok@distalinc.com" },
+    { name = "Nok (Enoch Afanwoubo)", email = "enochafanbo@outlook.com" },
 ]
 keywords = ["ai", "context", "memory", "mcp", "portable", "llm"]
 classifiers = [

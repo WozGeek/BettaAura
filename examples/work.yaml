@@ -23,7 +23,7 @@ facts:
   confidence: high
   source: manual
 - key: role.founder
-  value: "Solo founder — Distal Inc. (active tech holding)"
+  value: "Solo developer and CS student"
   type: identity
   confidence: high
   source: manual
@@ -50,8 +50,6 @@ facts:
 - key: current_focus
   value:
   - aura (portable AI context — open source)
-  - Hotepia v0.1 (knowledge engine by Distal Inc.)
-  - Elison pivot (decision intelligence platform)
   - Academics (Java, Calculus I)
   type: context
   confidence: high

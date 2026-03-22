@@ -76,7 +76,6 @@ facts:
 - key: active_projects
   value:
   - Hotepia (knowledge engine, Next.js/TypeScript)
-  - Elison (decision intelligence platform)
   - aura (portable AI context, Python CLI)
   type: context
   confidence: high

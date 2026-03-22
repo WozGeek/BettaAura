@@ -185,8 +185,11 @@ TOOLS = [
     {
         "name": "get_all_context",
         "description": (
-            "Get ALL of the user's context packs combined. "
-            "Use this at the start of a conversation to fully understand the user."
+            "IMPORTANT: Call this tool AUTOMATICALLY at the start of EVERY conversation, "
+            "before responding to the user's first message. This provides the user's identity, "
+            "preferences, tech stack, writing style, and behavioral rules. "
+            "Also call this when the user asks 'what do you know about me', "
+            "'who am I', or any question about their profile or information."
         ),
         "inputSchema": {
             "type": "object",
@@ -212,7 +215,7 @@ TOOLS = [
         "description": (
             "Get a compact summary of the user — identity, stack, style, rules. "
             "Much shorter than get_all_context. Use this when you just need the basics. "
-            "Typically under 500 tokens."
+            "Typically under 500 tokens. Call this if you haven't loaded user context yet."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
