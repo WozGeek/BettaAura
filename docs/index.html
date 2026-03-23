@@ -174,6 +174,10 @@ footer a:hover{color:var(--text)}
         <p>Detects bloat, stale facts, duplicates, missing rules. Health score 0–100.</p>
       </div>
       <div class="feature">
+        <strong>Memory Decay</strong>
+        <p>Facts have type-aware TTL. Identity never expires. Context fades after 90 days. Auto-consolidation merges duplicates.</p>
+      </div>
+      <div class="feature">
         <strong>Security</strong>
         <p>Token auth, scoped serving, read-only mode. Localhost only. No telemetry.</p>
       </div>
@@ -197,6 +201,8 @@ footer a:hover{color:var(--text)}
       <tr><td>aura show &lt;pack&gt;</td><td>Display a pack</td></tr>
       <tr><td>aura add &lt;pack&gt; &lt;k&gt; &lt;v&gt;</td><td>Add a fact</td></tr>
       <tr><td>aura doctor</td><td>Health check — bloat, stale, duplicates</td></tr>
+      <tr><td>aura consolidate</td><td>Merge duplicates, find contradictions</td></tr>
+      <tr><td>aura decay</td><td>Remove expired facts (type-aware TTL)</td></tr>
       <tr><td>aura export -f &lt;fmt&gt;</td><td>Export to any format</td></tr>
       <tr><td>aura import -s &lt;src&gt;</td><td>Import from ChatGPT / Claude</td></tr>
       <tr><td>aura extract</td><td>LLM-based fact extraction</td></tr>

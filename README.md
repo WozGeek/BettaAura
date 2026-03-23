@@ -152,6 +152,8 @@ aura serve   # starts MCP server on localhost:3847
 | `aura add <pack> <key> <value>` | Add a fact without editing YAML |
 | `aura edit <pack>` | Open in $EDITOR |
 | `aura doctor` | Check pack health — bloat, stale facts, duplicates |
+| `aura consolidate` | Merge duplicates, find contradictions across packs |
+| `aura decay` | Check/remove expired facts based on type-aware TTL |
 | `aura export <packs> -f <fmt>` | Export to system-prompt, cursorrules, chatgpt, claude |
 | `aura import -s <src> <file>` | Import from ChatGPT or Claude data export |
 | `aura extract <file>` | Deep-extract facts using a local LLM |
@@ -211,13 +213,14 @@ aura/
 ├── mcp_server.py    # FastAPI MCP server (HTTP + SSE)
 ├── setup.py         # Tool auto-configuration
 ├── doctor.py        # Pack health checker
+├── consolidate.py   # Consolidation engine + memory decay
 ├── extractor.py     # LLM-based extraction
 ├── diff.py          # Pack comparison
 ├── exporters/       # 4 export formats
 └── importers/       # ChatGPT + Claude importers
 ```
 
-**5,475 lines · 74 tests · 20 commands · MIT license**
+**6,138 lines · 84 tests · 22 commands · MIT license**
 
 ## Roadmap
 
@@ -231,6 +234,8 @@ aura/
 - [x] LLM-based deep extraction (Ollama / OpenAI)
 - [x] Pack health checker (`aura doctor`)
 - [x] Token-efficient compact profile
+- [x] Consolidation engine (`aura consolidate`)
+- [x] Memory decay with type-aware TTL (`aura decay`)
 - [ ] TypeScript / npm package
 - [ ] File watcher for live sync
 - [ ] JSON Schema spec for context packs
