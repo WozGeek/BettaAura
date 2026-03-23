@@ -840,6 +840,74 @@ def add(
 
 
 @app.command()
+def consolidate(
+    apply: bool = typer.Option(False, "--apply", help="Actually remove duplicates (default: dry run)"),
+):
+    """Merge duplicate facts, find contradictions, compress redundant entries."""
+    from aura.consolidate import (
+        consolidate as run_consolidate,
+        format_consolidate_report,
+    )
+    from aura.pack import is_initialized, list_packs as _list_packs, save_pack as _save_pack
+
+    if not is_initialized():
+        rprint("[yellow]aura is not initialized.[/yellow] Run [bold]aura init[/bold] first.")
+        raise typer.Exit(1)
+
+    packs = _list_packs()
+    mode = "[bold red]APPLY[/bold red]" if apply else "[dim]DRY RUN[/dim]"
+
+    rprint(Panel.fit(
+        f"[bold]✦ aura consolidate[/bold] {mode}\n\n"
+        f"  Scanning {len(packs)} pack(s) for duplicates and contradictions...",
+        border_style="cyan",
+    ))
+
+    result = run_consolidate(packs, dry_run=not apply)
+    rprint(format_consolidate_report(result))
+
+    if apply and result.packs_modified:
+        for pack in packs:
+            if pack.name in result.packs_modified:
+                _save_pack(pack)
+        rprint(f"\n  [green]✦ Saved {len(result.packs_modified)} modified pack(s).[/green]")
+    elif not apply and (result.merged or result.contradictions):
+        rprint(f"\n  [dim]Run with --apply to remove duplicates.[/dim]")
+
+
+@app.command()
+def decay(
+    apply: bool = typer.Option(False, "--apply", help="Actually remove expired facts (default: dry run)"),
+):
+    """Check for expired facts based on type-aware TTL. Remove stale context."""
+    from aura.consolidate import check_decay, format_decay_report
+    from aura.pack import is_initialized, list_packs as _list_packs, save_pack as _save_pack
+
+    if not is_initialized():
+        rprint("[yellow]aura is not initialized.[/yellow] Run [bold]aura init[/bold] first.")
+        raise typer.Exit(1)
+
+    packs = _list_packs()
+    mode = "[bold red]APPLY[/bold red]" if apply else "[dim]DRY RUN[/dim]"
+
+    rprint(Panel.fit(
+        f"[bold]✦ aura decay[/bold] {mode}\n\n"
+        f"  Checking TTL on {sum(len(p.facts) for p in packs)} facts across {len(packs)} pack(s)...",
+        border_style="cyan",
+    ))
+
+    result = check_decay(packs, dry_run=not apply)
+    rprint(format_decay_report(result))
+
+    if apply and result.expired:
+        for pack in packs:
+            _save_pack(pack)
+        rprint(f"\n  [green]✦ Removed {len(result.expired)} expired fact(s).[/green]")
+    elif not apply and result.expired:
+        rprint(f"\n  [dim]Run with --apply to remove expired facts.[/dim]")
+
+
+@app.command()
 def version():
     """Show aura version."""
     rprint(f"[bold]aura[/bold] v{__version__}")

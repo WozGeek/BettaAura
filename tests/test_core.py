@@ -1038,3 +1038,170 @@ class TestCompactProfile:
         from aura.mcp_server import _compact_profile
         result = _compact_profile([])
         assert "No user context" in result
+
+
+# ---------------------------------------------------------------------------
+# Memory Decay Tests
+# ---------------------------------------------------------------------------
+class TestMemoryDecay:
+    def test_identity_never_expires(self):
+        from aura.consolidate import check_decay
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+        from datetime import datetime, timedelta
+
+        old_date = datetime.now() - timedelta(days=365)
+        pack = ContextPack(
+            name="test", scope="general",
+            facts=[
+                Fact(key="identity.name", value="Nok", type=FactType.IDENTITY,
+                     confidence=Confidence.HIGH, updated_at=old_date),
+            ],
+            meta=PackMeta(description="Test"),
+        )
+        result = check_decay([pack])
+        assert len(result.expired) == 0
+        assert result.preserved == 1
+
+    def test_context_fact_expires(self):
+        from aura.consolidate import check_decay
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+        from datetime import datetime, timedelta
+
+        old_date = datetime.now() - timedelta(days=120)
+        pack = ContextPack(
+            name="test", scope="general",
+            facts=[
+                Fact(key="project.current", value="old-project", type=FactType.CONTEXT,
+                     confidence=Confidence.HIGH, updated_at=old_date),
+            ],
+            meta=PackMeta(description="Test"),
+        )
+        result = check_decay([pack])
+        assert len(result.expired) == 1
+
+    def test_low_confidence_decays_faster(self):
+        from aura.consolidate import compute_ttl
+        from aura.schema import Fact, FactType, Confidence
+
+        high = Fact(key="x", value="y", type=FactType.CONTEXT, confidence=Confidence.HIGH)
+        low = Fact(key="x", value="y", type=FactType.CONTEXT, confidence=Confidence.LOW)
+        assert compute_ttl(low) < compute_ttl(high)
+
+    def test_import_decays_faster(self):
+        from aura.consolidate import compute_ttl
+        from aura.schema import Fact, FactType, Confidence
+
+        manual = Fact(key="x", value="y", type=FactType.CONTEXT, confidence=Confidence.HIGH, source="manual")
+        imported = Fact(key="x", value="y", type=FactType.CONTEXT, confidence=Confidence.HIGH, source="chatgpt-import")
+        assert compute_ttl(imported) < compute_ttl(manual)
+
+    def test_decay_apply_removes_facts(self):
+        from aura.consolidate import check_decay
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+        from datetime import datetime, timedelta
+
+        old_date = datetime.now() - timedelta(days=200)
+        pack = ContextPack(
+            name="test", scope="general",
+            facts=[
+                Fact(key="old.fact", value="stale", type=FactType.CONTEXT,
+                     confidence=Confidence.HIGH, updated_at=old_date),
+                Fact(key="identity.name", value="Nok", type=FactType.IDENTITY,
+                     confidence=Confidence.HIGH, updated_at=old_date),
+            ],
+            meta=PackMeta(description="Test"),
+        )
+        result = check_decay([pack], dry_run=False)
+        assert len(result.expired) == 1
+        assert len(pack.facts) == 1
+        assert pack.facts[0].key == "identity.name"
+
+    def test_warning_expiring_soon(self):
+        from aura.consolidate import check_decay
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+        from datetime import datetime, timedelta
+
+        almost_old = datetime.now() - timedelta(days=80)
+        pack = ContextPack(
+            name="test", scope="general",
+            facts=[
+                Fact(key="project.soon", value="expiring", type=FactType.CONTEXT,
+                     confidence=Confidence.HIGH, updated_at=almost_old),
+            ],
+            meta=PackMeta(description="Test"),
+        )
+        result = check_decay([pack])
+        assert len(result.warning) == 1
+
+
+# ---------------------------------------------------------------------------
+# Consolidation Tests
+# ---------------------------------------------------------------------------
+class TestConsolidation:
+    def test_find_cross_pack_duplicates(self):
+        from aura.consolidate import consolidate
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+
+        pack_a = ContextPack(
+            name="dev", scope="development",
+            facts=[Fact(key="editor", value="Cursor", type=FactType.PREFERENCE, confidence=Confidence.HIGH)],
+            meta=PackMeta(description="Dev"),
+        )
+        pack_b = ContextPack(
+            name="work", scope="work",
+            facts=[Fact(key="editor", value="Cursor", type=FactType.PREFERENCE, confidence=Confidence.MEDIUM)],
+            meta=PackMeta(description="Work"),
+        )
+        result = consolidate([pack_a, pack_b])
+        assert len(result.merged) == 1
+
+    def test_find_contradictions(self):
+        from aura.consolidate import consolidate
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+
+        pack_a = ContextPack(
+            name="dev", scope="development",
+            facts=[Fact(key="editor", value="Cursor", type=FactType.PREFERENCE, confidence=Confidence.HIGH)],
+            meta=PackMeta(description="Dev"),
+        )
+        pack_b = ContextPack(
+            name="work", scope="work",
+            facts=[Fact(key="editor", value="VS Code", type=FactType.PREFERENCE, confidence=Confidence.HIGH)],
+            meta=PackMeta(description="Work"),
+        )
+        result = consolidate([pack_a, pack_b])
+        assert len(result.contradictions) == 1
+
+    def test_consolidate_apply_removes(self):
+        from aura.consolidate import consolidate
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+
+        pack_a = ContextPack(
+            name="dev", scope="development",
+            facts=[Fact(key="lang", value="Python", type=FactType.SKILL, confidence=Confidence.HIGH)],
+            meta=PackMeta(description="Dev"),
+        )
+        pack_b = ContextPack(
+            name="work", scope="work",
+            facts=[Fact(key="lang", value="Python", type=FactType.SKILL, confidence=Confidence.LOW)],
+            meta=PackMeta(description="Work"),
+        )
+        result = consolidate([pack_a, pack_b], dry_run=False)
+        assert result.removed == 1
+        assert len(pack_b.facts) == 0
+
+    def test_no_duplicates_clean(self):
+        from aura.consolidate import consolidate
+        from aura.schema import ContextPack, Fact, FactType, Confidence, PackMeta
+
+        pack = ContextPack(
+            name="dev", scope="development",
+            facts=[
+                Fact(key="lang", value="Python", type=FactType.SKILL, confidence=Confidence.HIGH),
+                Fact(key="editor", value="Cursor", type=FactType.PREFERENCE, confidence=Confidence.HIGH),
+            ],
+            meta=PackMeta(description="Dev"),
+        )
+        result = consolidate([pack])
+        assert len(result.merged) == 0
+        assert len(result.contradictions) == 0
