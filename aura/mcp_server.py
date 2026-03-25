@@ -127,6 +127,7 @@ def _compact_profile(packs: list, max_facts: int | None = None) -> str:
 
         for fact in facts:
             val = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
+            val = _scrub_secrets(val)  # Redact before serving
             entry = f"{fact.key}: {val}"
             if fact.key.startswith("identity") or fact.key in ("role", "role.founder", "role.student", "role.employment"):
                 identity.append(entry)
@@ -153,6 +154,62 @@ def _compact_profile(packs: list, max_facts: int | None = None) -> str:
     return "\n".join(lines)
 
 
+def _scrub_secrets(text: str) -> str:
+    """Scrub known secret patterns from text before serving to LLM."""
+    try:
+        from aura.audit import _COMPILED_PATTERNS, Severity
+        for _, pattern, severity, _ in _COMPILED_PATTERNS:
+            if severity == Severity.CRITICAL:
+                text = pattern.sub("[REDACTED]", text)
+    except ImportError:
+        pass
+    return text
+
+
+def _identity_card(packs: list) -> str:
+    """Generate an ultra-compact identity card. Target: ~50-100 tokens."""
+    name = None
+    role = None
+    top_skills: list[str] = []
+    top_rules: list[str] = []
+
+    for pack in packs:
+        for fact in pack.facts:
+            val = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
+            val = _scrub_secrets(val)
+            if fact.key == "identity.name" and not name:
+                name = val
+            elif fact.key in ("role", "role.employment", "role.founder") and not role:
+                role = val
+            elif fact.key in ("languages.primary", "frameworks", "editor") and len(top_skills) < 3:
+                top_skills.append(f"{fact.key.split('.')[-1]}: {val}")
+            elif fact.type and fact.type.value == "identity" and fact.key != "identity.name":
+                if not role:
+                    role = val
+
+        for rule in pack.rules[:2]:  # Top 2 rules only
+            if len(top_rules) < 2:
+                top_rules.append(rule.instruction)
+
+    parts = []
+    if name:
+        parts.append(name)
+    if role:
+        parts.append(role)
+    header = " — ".join(parts) if parts else "User"
+
+    lines = [header]
+    if top_skills:
+        lines.append("Stack: " + " | ".join(top_skills))
+    if top_rules:
+        lines.append("Key rules: " + " | ".join(top_rules))
+
+    if len(lines) == 1 and lines[0] == "User":
+        return "No user identity configured. Ask the user to run 'aura quickstart'."
+
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # MCP Protocol constants
 # ---------------------------------------------------------------------------
@@ -166,10 +223,22 @@ SERVER_CAPABILITIES = {
 
 TOOLS = [
     {
+        "name": "get_identity_card",
+        "description": (
+            "IMPORTANT: Call this tool AUTOMATICALLY at the start of EVERY conversation, "
+            "before responding to the user's first message. Returns a ultra-compact identity "
+            "card (~50-100 tokens): name, role, top 3 skills, and primary rules. "
+            "This is the FASTEST way to know who you're talking to. "
+            "For deeper context, follow up with get_context or get_user_profile."
+        ),
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "get_context",
         "description": (
             "Get the user's full context for a specific scope/domain. "
-            "Returns structured facts and rules. Use this to understand who you're talking to."
+            "Returns structured facts and rules. Use this when you need detailed "
+            "information about a particular area (e.g. their dev stack, writing style)."
         ),
         "inputSchema": {
             "type": "object",
@@ -185,11 +254,10 @@ TOOLS = [
     {
         "name": "get_all_context",
         "description": (
-            "IMPORTANT: Call this tool AUTOMATICALLY at the start of EVERY conversation, "
-            "before responding to the user's first message. This provides the user's identity, "
-            "preferences, tech stack, writing style, and behavioral rules. "
-            "Also call this when the user asks 'what do you know about me', "
-            "'who am I', or any question about their profile or information."
+            "Get ALL context packs combined. This is a HEAVY call — use only when the user "
+            "explicitly asks 'what do you know about me', 'who am I', or when you need "
+            "comprehensive cross-domain context. Prefer get_identity_card for quick lookups "
+            "and get_context for specific domains."
         ),
         "inputSchema": {
             "type": "object",
@@ -293,7 +361,11 @@ PROMPTS = [
 # Tool execution
 # ---------------------------------------------------------------------------
 def execute_tool(name: str, arguments: dict) -> list[dict]:
-    if name == "get_context":
+    if name == "get_identity_card":
+        packs = _filter_packs(list_packs())
+        return [{"type": "text", "text": _identity_card(packs)}]
+
+    elif name == "get_context":
         pack_name = arguments["pack_name"]
         if not _is_pack_allowed(pack_name):
             return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]

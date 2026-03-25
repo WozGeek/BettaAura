@@ -78,6 +78,7 @@ def diagnose(packs: list[ContextPack]) -> HealthReport:
     _check_missing_recommended(packs, report)
     _check_stale_facts(packs, report)
     _check_no_rules(packs, report)
+    _check_secrets(packs, report)
 
     # Calculate score
     warning_count = len(report.warnings)
@@ -189,6 +190,30 @@ def _check_no_rules(packs: list[ContextPack], report: HealthReport):
                 message="Pack has facts but no rules",
                 suggestion="Rules tell AI how to behave. Add some: 'aura edit " + pack.name + "'",
             ))
+
+
+def _check_secrets(packs: list[ContextPack], report: HealthReport):
+    """Check for leaked secrets and credentials in fact values."""
+    try:
+        from aura.audit import Severity, audit_packs
+        audit_report = audit_packs(packs)
+        for finding in audit_report.findings:
+            if finding.severity == Severity.CRITICAL:
+                report.issues.append(Issue(
+                    severity="warning",
+                    pack=finding.pack,
+                    message=f"🚨 Secret detected: {finding.pattern_name} in '{finding.fact_key}'",
+                    suggestion=f"{finding.suggestion} Run 'aura audit --fix' to auto-redact.",
+                ))
+            elif finding.severity == Severity.WARNING:
+                report.issues.append(Issue(
+                    severity="info",
+                    pack=finding.pack,
+                    message=f"Sensitive data: {finding.pattern_name} in '{finding.fact_key}'",
+                    suggestion=finding.suggestion,
+                ))
+    except ImportError:
+        pass  # audit module not available — skip silently
 
 
 def format_report(report: HealthReport) -> str:

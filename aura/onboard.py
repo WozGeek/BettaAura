@@ -20,7 +20,13 @@ QUESTIONS = [
         "prompt": "What's your role? (e.g. 'Full-stack dev at Acme Corp', 'Freelance designer', 'CS student')",
         "pack": "work",
         "facts": lambda answer: [
-            Fact(key="role", value=answer, type=FactType.IDENTITY, confidence=Confidence.HIGH, source="onboard"),
+            Fact(
+                key="role",
+                value=answer,
+                type=FactType.IDENTITY,
+                confidence=Confidence.HIGH,
+                source="onboard",
+            ),
         ],
     },
     {
@@ -34,7 +40,13 @@ QUESTIONS = [
         "prompt": "What are you working on right now? List your top 1-3 projects or priorities:",
         "pack": "work",
         "facts": lambda answer: [
-            Fact(key="current_focus", value=answer, type=FactType.CONTEXT, confidence=Confidence.HIGH, source="onboard"),
+            Fact(
+                key="current_focus",
+                value=answer,
+                type=FactType.CONTEXT,
+                confidence=Confidence.HIGH,
+                source="onboard",
+            ),
         ],
     },
     {
@@ -48,7 +60,13 @@ QUESTIONS = [
         "prompt": "What human languages do you work in? (e.g. 'English', 'English and French')",
         "pack": "writer",
         "facts": lambda answer: [
-            Fact(key="languages", value=answer, type=FactType.SKILL, confidence=Confidence.HIGH, source="onboard"),
+            Fact(
+                key="languages",
+                value=answer,
+                type=FactType.SKILL,
+                confidence=Confidence.HIGH,
+                source="onboard",
+            ),
         ],
     },
 ]
@@ -61,9 +79,18 @@ TONE_PRESETS = {
     "1": {
         "tone": "Direct, no fluff, sharp analytical edge. Challenge me when my reasoning has gaps.",
         "rules": [
-            Rule(instruction="Avoid corporate jargon, buzzwords, and empty filler phrases", priority=9),
-            Rule(instruction="Lead with the conclusion, then explain the reasoning", priority=8),
-            Rule(instruction="Challenge me directly when my reasoning has gaps — no sugarcoating", priority=9),
+            Rule(
+                instruction="Avoid corporate jargon, buzzwords, and empty filler phrases",
+                priority=9,
+            ),
+            Rule(
+                instruction="Lead with the conclusion, then explain the reasoning",
+                priority=8,
+            ),
+            Rule(
+                instruction="Challenge me directly when my reasoning has gaps — no sugarcoating",
+                priority=9,
+            ),
         ],
     },
     "2": {
@@ -77,9 +104,15 @@ TONE_PRESETS = {
     "3": {
         "tone": "Technical, precise, detailed. Assume I know what I'm doing.",
         "rules": [
-            Rule(instruction="Be technically precise — use correct terminology", priority=9),
+            Rule(
+                instruction="Be technically precise — use correct terminology",
+                priority=9,
+            ),
             Rule(instruction="Skip beginner explanations unless asked", priority=8),
-            Rule(instruction="Include edge cases and caveats in technical answers", priority=7),
+            Rule(
+                instruction="Include edge cases and caveats in technical answers",
+                priority=7,
+            ),
         ],
     },
 }
@@ -162,19 +195,27 @@ class Onboarder:
 
         if answer in TONE_PRESETS:
             preset = TONE_PRESETS[answer]
-            self.writer_facts.append(Fact(
-                key="tone", value=preset["tone"],
-                type=FactType.STYLE, confidence=Confidence.HIGH,
-                source="onboard",
-            ))
+            self.writer_facts.append(
+                Fact(
+                    key="tone",
+                    value=preset["tone"],
+                    type=FactType.STYLE,
+                    confidence=Confidence.HIGH,
+                    source="onboard",
+                )
+            )
             self.writer_rules.extend(preset["rules"])
         else:
             # Custom tone
-            self.writer_facts.append(Fact(
-                key="tone", value=answer,
-                type=FactType.STYLE, confidence=Confidence.HIGH,
-                source="onboard",
-            ))
+            self.writer_facts.append(
+                Fact(
+                    key="tone",
+                    value=answer,
+                    type=FactType.STYLE,
+                    confidence=Confidence.HIGH,
+                    source="onboard",
+                )
+            )
 
     def _handle_rules(self, answer: str):
         """Handle the rules question — split by commas."""
@@ -183,7 +224,9 @@ class Onboarder:
 
         rules = [r.strip() for r in answer.split(",") if r.strip()]
         for rule_text in rules:
-            self.writer_rules.append(Rule(
-                instruction=rule_text,
-                priority=7,
-            ))
+            self.writer_rules.append(
+                Rule(
+                    instruction=rule_text,
+                    priority=7,
+                )
+            )

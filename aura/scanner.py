@@ -33,11 +33,57 @@ from aura.schema import Confidence, ContextPack, Fact, FactType, PackMeta, Rule
 class Scanner:
     """Scans the local machine and builds a ContextPack."""
 
-    def __init__(self, scan_dirs: Optional[list[str]] = None, max_repos: int = 20):
+    def __init__(self, scan_dirs: Optional[list[str]] = None, max_repos: int = 20,
+                 incremental: bool = True):
         self.scan_dirs = scan_dirs or self._default_scan_dirs()
         self.max_repos = max_repos
+        self.incremental = incremental
         self.facts: list[Fact] = []
         self.rules: list[Rule] = []
+        self._cache_updates: dict[str, str] = {}  # source_key -> hash
+        self._skipped: int = 0
+
+    def _should_scan(self, source_key: str, content: str) -> bool:
+        """Check if this source needs re-scanning based on content hash."""
+        if not self.incremental:
+            return True
+        try:
+            from aura.scan_cache import has_changed, hash_content
+            content_hash = hash_content(content)
+            self._cache_updates[source_key] = content_hash
+            if not has_changed(source_key, content_hash):
+                self._skipped += 1
+                return False
+        except ImportError:
+            pass
+        return True
+
+    def _should_scan_file(self, source_key: str, filepath: Path) -> bool:
+        """Check if a file needs re-scanning based on file hash."""
+        if not self.incremental:
+            return True
+        try:
+            from aura.scan_cache import has_changed, hash_file
+            file_hash = hash_file(filepath)
+            if file_hash is None:
+                return True
+            self._cache_updates[source_key] = file_hash
+            if not has_changed(source_key, file_hash):
+                self._skipped += 1
+                return False
+        except ImportError:
+            pass
+        return True
+
+    def _flush_cache(self):
+        """Write all accumulated cache updates to disk."""
+        if not self.incremental or not self._cache_updates:
+            return
+        try:
+            from aura.scan_cache import update_cache
+            update_cache(self._cache_updates)
+        except ImportError:
+            pass
 
     def scan(self) -> ContextPack:
         """Run all scanners and return a populated ContextPack."""
@@ -46,6 +92,9 @@ class Scanner:
         self._scan_repos()
         self._scan_existing_rules()
         self._scan_system_info()
+
+        # Flush cache after successful scan
+        self._flush_cache()
 
         return ContextPack(
             name="scanned",
@@ -65,6 +114,10 @@ class Scanner:
         """Extract name and email from git config."""
         name = _run_cmd("git config --global user.name")
         email = _run_cmd("git config --global user.email")
+
+        content = f"{name or ''}|{email or ''}"
+        if not self._should_scan("git-identity", content):
+            return
 
         if name:
             self.facts.append(Fact(
@@ -419,6 +472,9 @@ class Scanner:
                     filepath = repo / filename
                     try:
                         if filepath.exists() and filepath.is_file():
+                            cache_key = f"rules:{filepath}"
+                            if not self._should_scan_file(cache_key, filepath):
+                                continue
                             content = filepath.read_text()[:500]
                             self.facts.append(Fact(
                                 key=f"existing_rules.{source}",

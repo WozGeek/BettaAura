@@ -407,6 +407,7 @@ def serve(
     token: Optional[str] = typer.Option(None, "--token", "-t", help="Require auth token for all MCP requests"),
     packs: Optional[str] = typer.Option(None, "--packs", help="Comma-separated list of packs to serve (default: all)"),
     read_only: bool = typer.Option(False, "--read-only", help="Disable write operations (add_fact, add_rule)"),
+    watch: bool = typer.Option(False, "--watch", "-w", help="Auto-reload when pack YAML files change"),
 ):
     """Start the aura MCP server. Serves your context packs to any MCP client."""
     from aura.pack import init_aura
@@ -436,6 +437,11 @@ def serve(
         security_lines.append(f"  [cyan]📦 Packs:[/cyan]  {', '.join(allowed_packs)}")
     if read_only:
         security_lines.append("  [yellow]📖 Mode:[/yellow]   read-only")
+
+    # File watcher
+    watch_line = ""
+    if watch:
+        security_lines.append("  [green]👁 Watch:[/green]  auto-reload on YAML changes")
     security_block = "\n".join(security_lines)
 
     rprint(Panel.fit(
@@ -448,6 +454,18 @@ def serve(
         title="aura v" + __version__,
         border_style="green",
     ))
+
+    # Start file watcher if requested
+    if watch:
+        from aura.watcher import start_watching
+
+        def on_packs_changed():
+            reloaded = _list_packs()
+            count = len(reloaded)
+            rprint(f"  [green]↻[/green] Packs reloaded ({count} pack{'s' if count != 1 else ''})")
+
+        _watcher, engine = start_watching(on_packs_changed)
+        rprint(f"  [dim]Watcher engine: {engine}[/dim]\n")
 
     from aura.mcp_server import run_server
     run_server(host=host, port=port)
@@ -608,6 +626,7 @@ def scan(
     dirs: Optional[list[str]] = typer.Argument(None, help="Directories to scan (default: ~/Documents, ~/Projects, etc.)"),
     name: str = typer.Option("developer", "--name", "-n", help="Name for the generated pack"),
     save: bool = typer.Option(True, "--save/--no-save", help="Save the pack to disk"),
+    full: bool = typer.Option(False, "--full", help="Force full re-scan (ignore cache)"),
 ):
     """Scan your machine and auto-generate a context pack from your actual environment."""
     from aura.pack import init_aura, pack_exists
@@ -616,19 +635,23 @@ def scan(
 
     init_aura()
 
+    mode = "full" if full else "incremental"
     rprint(Panel.fit(
-        "[bold]✦ aura scan[/bold]\n\n"
+        f"[bold]✦ aura scan[/bold] [dim]({mode})[/dim]\n\n"
         "  Scanning your machine for languages, frameworks,\n"
         "  tools, projects, and preferences...",
         border_style="cyan",
     ))
 
-    scanner = Scanner(scan_dirs=dirs)
+    scanner = Scanner(scan_dirs=dirs, incremental=not full)
     pack = scanner.scan()
     pack.name = name
 
     # Display results
     rprint("\n[green]✦ Scan complete[/green]\n")
+
+    if scanner._skipped and not full:
+        rprint(f"  [dim]⚡ Skipped {scanner._skipped} unchanged source(s) (use --full to re-scan all)[/dim]\n")
 
     if pack.facts:
         rprint("[bold]Detected:[/bold]")
@@ -704,16 +727,16 @@ def onboard():
 
 @app.command()
 def quickstart():
-    """Full onboarding in one command: scan + onboard + setup + serve."""
+    """Full onboarding in one command: scan + onboard + setup + audit + serve."""
     rprint(Panel.fit(
         "[bold]✦ aura quickstart[/bold]\n\n"
         "  The fastest way to get your AI context running.\n"
-        "  Scan → Onboard → Setup → Serve",
+        "  Scan → Onboard → Setup → Audit → Serve",
         border_style="green",
     ))
 
     # Step 1: Scan
-    rprint("\n[bold cyan]Step 1/4 — Scanning your machine...[/bold cyan]")
+    rprint("\n[bold cyan]Step 1/5 — Scanning your machine...[/bold cyan]")
     from aura.pack import init_aura
     from aura.pack import save_pack as _save_pack
     from aura.scanner import Scanner
@@ -726,7 +749,7 @@ def quickstart():
     rprint(f"  [green]✦[/green] Detected {len(dev_pack.facts)} facts about your dev environment")
 
     # Step 2: Onboard
-    rprint("\n[bold cyan]Step 2/4 — Quick questions about you...[/bold cyan]")
+    rprint("\n[bold cyan]Step 2/5 — Quick questions about you...[/bold cyan]")
     from aura.onboard import Onboarder
     onboarder = Onboarder()
     packs = onboarder.run()
@@ -735,26 +758,48 @@ def quickstart():
         rprint(f"  [green]✦[/green] Created {pack_name} ({len(pack.facts)} facts, {len(pack.rules)} rules)")
 
     # Step 3: Setup
-    rprint("\n[bold cyan]Step 3/4 — Configuring AI tools...[/bold cyan]")
+    rprint("\n[bold cyan]Step 3/5 — Configuring AI tools...[/bold cyan]")
     from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor, setup_gemini
+    tools_configured = 0
     for tool in detect_installed_tools():
         if tool["installed"]:
             if tool["name"] == "Claude Desktop":
                 setup_claude_desktop()
                 rprint("  [green]✦[/green] Claude Desktop configured")
+                tools_configured += 1
             elif tool["name"] == "Cursor":
                 setup_cursor()
                 rprint("  [green]✦[/green] Cursor configured")
+                tools_configured += 1
             elif tool["name"] == "Gemini CLI":
                 setup_gemini()
                 rprint("  [green]✦[/green] Gemini CLI configured")
+                tools_configured += 1
             elif tool["name"] == "ChatGPT Desktop":
                 rprint("  [green]✦[/green] ChatGPT Desktop detected — use Developer Mode to add MCP")
                 rprint("    [dim]Settings → Connectors → Advanced → Developer Mode[/dim]")
                 rprint("    [dim]SSE URL: http://localhost:3847/sse[/dim]")
+                tools_configured += 1
+    if tools_configured == 0:
+        rprint("  [dim]No AI tools detected — you can configure them manually later[/dim]")
 
-    # Step 4: Summary
+    # Step 4: Security audit
+    rprint("\n[bold cyan]Step 4/5 — Security audit...[/bold cyan]")
+    from aura.audit import audit_packs, redact_packs
     from aura.pack import list_packs as _list_packs
+
+    all_packs = _list_packs()
+    audit_report = audit_packs(all_packs)
+    if audit_report.critical_count > 0:
+        rprint(f"  [yellow]⚡[/yellow] Found {audit_report.critical_count} secret(s) — auto-redacting...")
+        all_packs, redacted = redact_packs(all_packs)
+        for pack in all_packs:
+            _save_pack(pack)
+        rprint(f"  [green]✦[/green] Redacted {redacted} secret(s)")
+    else:
+        rprint("  [green]✦[/green] All clean — no secrets detected")
+
+    # Step 5: Summary + auto-serve
     all_packs = _list_packs()
     total_facts = sum(len(p.facts) for p in all_packs)
     total_rules = sum(len(p.rules) for p in all_packs)
@@ -762,12 +807,25 @@ def quickstart():
     rprint(Panel.fit(
         f"[bold green]✦ aura is ready[/bold green]\n\n"
         f"  {len(all_packs)} context packs | {total_facts} facts | {total_rules} rules\n\n"
-        f"  Start the MCP server:\n"
-        f"  [cyan]aura serve[/cyan]\n\n"
-        f"  Then restart your AI tools.\n"
-        f"  Claude, ChatGPT, Cursor, Gemini — they all know you now.",
+        f"  Starting MCP server with file watcher...\n"
+        f"  [cyan]http://localhost:3847/mcp[/cyan]\n\n"
+        f"  Restart your AI tools — they know you now.",
         border_style="green",
     ))
+
+    # Auto-serve with watch enabled
+    from aura.mcp_server import configure_security, run_server
+    from aura.watcher import start_watching
+
+    configure_security()
+
+    def on_packs_changed():
+        reloaded = _list_packs()
+        rprint(f"  [green]↻[/green] Packs reloaded ({len(reloaded)} packs)")
+
+    _watcher, engine = start_watching(on_packs_changed)
+    rprint(f"  [dim]Watcher: {engine} | Ctrl+C to stop[/dim]\n")
+    run_server(host="localhost", port=3847)
 
 
 @app.command()
@@ -905,6 +963,49 @@ def decay(
         rprint(f"\n  [green]✦ Removed {len(result.expired)} expired fact(s).[/green]")
     elif not apply and result.expired:
         rprint(f"\n  [dim]Run with --apply to remove expired facts.[/dim]")
+
+
+@app.command()
+def audit(
+    fix: bool = typer.Option(False, "--fix", help="Auto-redact critical secrets"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show all findings including info-level"),
+):
+    """Scan context packs for leaked secrets — API keys, tokens, credentials."""
+    from aura.audit import Severity, audit_packs, format_audit_report, redact_packs
+    from aura.pack import is_initialized
+    from aura.pack import list_packs as _list_packs
+    from aura.pack import save_pack as _save_pack
+
+    if not is_initialized():
+        rprint("[yellow]aura is not initialized.[/yellow] Run [bold]aura init[/bold] first.")
+        raise typer.Exit(1)
+
+    packs = _list_packs()
+
+    rprint(Panel.fit(
+        "[bold]✦ aura audit[/bold]\n\n"
+        f"  Scanning {len(packs)} pack(s) for secrets...",
+        border_style="cyan",
+    ))
+
+    report = audit_packs(packs)
+
+    if fix and report.critical_count > 0:
+        packs, redacted = redact_packs(packs)
+        for pack in packs:
+            _save_pack(pack)
+        rprint(f"\n  [green]✦ Auto-redacted {redacted} secret(s) across {len(packs)} pack(s).[/green]")
+        rprint("  [dim]Re-run 'aura audit' to verify.[/dim]")
+        return
+
+    if verbose:
+        for f in report.findings:
+            sev = {"critical": "[red]CRIT[/red]", "warning": "[yellow]WARN[/yellow]", "info": "[dim]INFO[/dim]"}
+            rprint(f"  {sev.get(f.severity.value, f.severity.value)} [{f.pack}] {f.fact_key}: {f.pattern_name}")
+            rprint(f"    {f.matched_value}")
+            rprint(f"    [dim]{f.suggestion}[/dim]")
+    else:
+        rprint(format_audit_report(report))
 
 
 @app.command()
