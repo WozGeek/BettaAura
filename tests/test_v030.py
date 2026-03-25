@@ -28,10 +28,22 @@ def pack_with_secrets() -> ContextPack:
         scope="development",
         facts=[
             Fact(key="aws.key", value="AKIAIOSFODNN7EXAMPLE", type=FactType.CONTEXT),
-            Fact(key="github.token", value="ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij", type=FactType.CONTEXT),
-            Fact(key="openai.key", value="sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG", type=FactType.CONTEXT),
+            Fact(
+                key="github.token",
+                value="ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij",
+                type=FactType.CONTEXT,
+            ),
+            Fact(
+                key="openai.key",
+                value="sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+                type=FactType.CONTEXT,
+            ),
             Fact(key="email", value="user@example.com", type=FactType.IDENTITY),
-            Fact(key="db", value="postgres://admin:pass@10.0.0.5:5432/mydb", type=FactType.CONTEXT),
+            Fact(
+                key="db",
+                value="postgres://admin:pass@10.0.0.5:5432/mydb",
+                type=FactType.CONTEXT,
+            ),
         ],
         meta=PackMeta(description="Pack with secrets for testing"),
     )
@@ -44,7 +56,11 @@ def clean_pack() -> ContextPack:
         name="clean",
         scope="development",
         facts=[
-            Fact(key="languages.primary", value=["Python", "TypeScript"], type=FactType.SKILL),
+            Fact(
+                key="languages.primary",
+                value=["Python", "TypeScript"],
+                type=FactType.SKILL,
+            ),
             Fact(key="editor", value="Cursor", type=FactType.PREFERENCE),
             Fact(key="style", value="Concise, no fluff", type=FactType.STYLE),
         ],
@@ -61,8 +77,16 @@ def identity_pack() -> ContextPack:
         scope="development",
         facts=[
             Fact(key="identity.name", value="Nok", type=FactType.IDENTITY),
-            Fact(key="role", value="Software Engineer at Boston Scientific", type=FactType.IDENTITY),
-            Fact(key="languages.primary", value=["Python", "TypeScript"], type=FactType.SKILL),
+            Fact(
+                key="role",
+                value="Software Engineer at Boston Scientific",
+                type=FactType.IDENTITY,
+            ),
+            Fact(
+                key="languages.primary",
+                value=["Python", "TypeScript"],
+                type=FactType.SKILL,
+            ),
             Fact(key="frameworks", value=["FastAPI", "Next.js"], type=FactType.SKILL),
             Fact(key="editor", value="Cursor", type=FactType.PREFERENCE),
         ],
@@ -137,7 +161,9 @@ class TestAudit:
     def test_redact_removes_critical_secrets(self, pack_with_secrets):
         from aura.audit import redact_packs
 
-        original_aws = next(f for f in pack_with_secrets.facts if f.key == "aws.key").value
+        original_aws = next(
+            f for f in pack_with_secrets.facts if f.key == "aws.key"
+        ).value
         packs, count = redact_packs([pack_with_secrets])
         assert count > 0
         # AWS key should be redacted (value changed from original)
@@ -148,7 +174,9 @@ class TestAudit:
     def test_redact_preserves_non_secret_facts(self, pack_with_secrets):
         from aura.audit import redact_packs
 
-        original_email = next(f for f in pack_with_secrets.facts if f.key == "email").value
+        original_email = next(
+            f for f in pack_with_secrets.facts if f.key == "email"
+        ).value
         packs, _ = redact_packs([pack_with_secrets])
         email_fact = next(f for f in packs[0].facts if f.key == "email")
         # Email is WARNING not CRITICAL, so redact should NOT touch it
@@ -166,8 +194,7 @@ class TestAudit:
         from aura.audit import scan_value
 
         findings = scan_value(
-            ["AKIAIOSFODNN7EXAMPLE", "safe_value"],
-            "test-pack", "mixed_key"
+            ["AKIAIOSFODNN7EXAMPLE", "safe_value"], "test-pack", "mixed_key"
         )
         assert len(findings) >= 1
 
@@ -189,8 +216,11 @@ class TestAudit:
         from aura.audit import audit_packs
 
         pack = ContextPack(
-            name="test", scope="development",
-            rules=[Rule(instruction="Use key AKIAIOSFODNN7EXAMPLE for AWS", priority=5)],
+            name="test",
+            scope="development",
+            rules=[
+                Rule(instruction="Use key AKIAIOSFODNN7EXAMPLE for AWS", priority=5)
+            ],
             meta=PackMeta(description="test"),
         )
         report = audit_packs([pack])
@@ -200,8 +230,11 @@ class TestAudit:
         from aura.audit import audit_packs
 
         pack = ContextPack(
-            name="test", scope="development",
-            meta=PackMeta(description="Deploy with ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"),
+            name="test",
+            scope="development",
+            meta=PackMeta(
+                description="Deploy with ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
+            ),
         )
         report = audit_packs([pack])
         assert report.critical_count >= 1
@@ -220,7 +253,8 @@ class TestAudit:
 
         findings = scan_value(
             "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-            "test", "auth_header"
+            "test",
+            "auth_header",
         )
         bearer = [f for f in findings if "Bearer" in f.pattern_name]
         assert len(bearer) >= 1
@@ -230,8 +264,7 @@ class TestAudit:
         from aura.audit import scan_value, Severity
 
         findings = scan_value(
-            "-----BEGIN RSA PRIVATE KEY-----\nMIIE...",
-            "test", "ssh_key"
+            "-----BEGIN RSA PRIVATE KEY-----\nMIIE...", "test", "ssh_key"
         )
         pk = [f for f in findings if "Private Key" in f.pattern_name]
         assert len(pk) >= 1
@@ -241,10 +274,7 @@ class TestAudit:
 
         # Build token at runtime to avoid GitHub push protection blocking the commit
         slack_token = "xoxb" + "-1234567890-1234567890-" + "AbCdEfGhIjKlMnOpQrStUvWx"
-        findings = scan_value(
-            slack_token,
-            "test", "slack"
-        )
+        findings = scan_value(slack_token, "test", "slack")
         slack = [f for f in findings if "Slack" in f.pattern_name]
         assert len(slack) >= 1
 
@@ -265,14 +295,22 @@ class TestDoctorAuditIntegration:
         from aura.doctor import diagnose
 
         report = diagnose([pack_with_secrets])
-        secret_issues = [i for i in report.issues if "Secret" in i.message or "secret" in i.message.lower()]
+        secret_issues = [
+            i
+            for i in report.issues
+            if "Secret" in i.message or "secret" in i.message.lower()
+        ]
         assert len(secret_issues) >= 1
 
     def test_doctor_clean_no_secret_warnings(self, clean_pack):
         from aura.doctor import diagnose
 
         report = diagnose([clean_pack])
-        secret_issues = [i for i in report.issues if "Secret" in i.message or "secret" in i.message.lower()]
+        secret_issues = [
+            i
+            for i in report.issues
+            if "Secret" in i.message or "secret" in i.message.lower()
+        ]
         assert len(secret_issues) == 0
 
 
@@ -357,8 +395,8 @@ class TestScanCache:
         update_cache({"a": "hash_a", "b": "hash_b"})
         changed = get_changed_sources({"a": "hash_a", "b": "new_hash", "c": "hash_c"})
         assert "a" not in changed  # Unchanged
-        assert "b" in changed       # Changed
-        assert "c" in changed       # New
+        assert "b" in changed  # Changed
+        assert "c" in changed  # New
 
     def test_get_cache_stats(self, tmp_path, monkeypatch):
         from aura.scan_cache import update_cache, get_cache_stats, _cache_path
@@ -450,7 +488,9 @@ class TestWatcher:
         from aura.watcher import PollingWatcher
 
         callback_called = []
-        watcher = PollingWatcher(tmp_path, lambda: callback_called.append(1), interval=0.1)
+        watcher = PollingWatcher(
+            tmp_path, lambda: callback_called.append(1), interval=0.1
+        )
         assert watcher.watch_dir == tmp_path
 
     def test_polling_watcher_detects_change(self, tmp_path):
@@ -481,7 +521,9 @@ class TestWatcher:
         from aura.watcher import PollingWatcher
 
         callback_count = []
-        watcher = PollingWatcher(tmp_path, lambda: callback_count.append(1), interval=0.1)
+        watcher = PollingWatcher(
+            tmp_path, lambda: callback_count.append(1), interval=0.1
+        )
         watcher.start()
 
         time.sleep(0.2)
@@ -515,7 +557,9 @@ class TestWatcher:
         from aura.watcher import PollingWatcher
 
         callback_count = []
-        watcher = PollingWatcher(tmp_path, lambda: callback_count.append(1), interval=0.1)
+        watcher = PollingWatcher(
+            tmp_path, lambda: callback_count.append(1), interval=0.1
+        )
         watcher.start()
         time.sleep(0.2)
 
@@ -530,7 +574,9 @@ class TestWatcher:
         (tmp_path / "existing.yaml").write_text("data")
 
         callback_count = []
-        watcher = PollingWatcher(tmp_path, lambda: callback_count.append(1), interval=0.1)
+        watcher = PollingWatcher(
+            tmp_path, lambda: callback_count.append(1), interval=0.1
+        )
         watcher.start()
         time.sleep(0.2)
 
@@ -599,10 +645,15 @@ class TestIdentityCard:
         from aura.mcp_server import _identity_card
 
         pack = ContextPack(
-            name="test", scope="development",
+            name="test",
+            scope="development",
             facts=[
                 Fact(key="identity.name", value="Test User", type=FactType.IDENTITY),
-                Fact(key="role", value="Dev with key AKIAIOSFODNN7EXAMPLE", type=FactType.IDENTITY),
+                Fact(
+                    key="role",
+                    value="Dev with key AKIAIOSFODNN7EXAMPLE",
+                    type=FactType.IDENTITY,
+                ),
             ],
             meta=PackMeta(description="test"),
         )
@@ -620,9 +671,9 @@ class TestIdentityCard:
 
         tool_names = [t["name"] for t in TOOLS]
         # All 3 levels of token delivery
-        assert "get_identity_card" in tool_names   # Level 1: ~50-100 tokens
-        assert "get_user_profile" in tool_names     # Level 2: ~200-500 tokens
-        assert "get_all_context" in tool_names      # Level 3: full dump
+        assert "get_identity_card" in tool_names  # Level 1: ~50-100 tokens
+        assert "get_user_profile" in tool_names  # Level 2: ~200-500 tokens
+        assert "get_all_context" in tool_names  # Level 3: full dump
 
     def test_identity_card_shorter_than_profile(self, identity_pack):
         from aura.mcp_server import _compact_profile, _identity_card
@@ -671,32 +722,44 @@ class TestQuickstartStructure:
 
     def test_audit_module_importable(self):
         from aura.audit import audit_packs, redact_packs, format_audit_report
+
         assert callable(audit_packs)
         assert callable(redact_packs)
         assert callable(format_audit_report)
 
     def test_scan_cache_module_importable(self):
         from aura.scan_cache import (
-            hash_content, hash_file, has_changed,
-            update_entry, update_cache, get_changed_sources,
-            get_cache_stats, clear_cache,
+            hash_content,
+            hash_file,
+            has_changed,
+            update_entry,
+            update_cache,
+            get_changed_sources,
+            get_cache_stats,
+            clear_cache,
         )
+
         assert callable(hash_content)
 
     def test_watcher_module_importable(self):
         from aura.watcher import create_watcher, start_watching, PollingWatcher
+
         assert callable(create_watcher)
         assert callable(start_watching)
 
     def test_cli_audit_command_exists(self):
         from aura.cli import app
+
         # Typer uses callback.__name__ when name is not explicitly passed
-        command_names = [cmd.name or cmd.callback.__name__ for cmd in app.registered_commands]
+        command_names = [
+            cmd.name or cmd.callback.__name__ for cmd in app.registered_commands
+        ]
         assert "audit" in command_names
 
     def test_cli_serve_has_watch_flag(self):
         """Verify serve command accepts --watch."""
         from aura.cli import serve
         import inspect
+
         sig = inspect.signature(serve)
         assert "watch" in sig.parameters

@@ -4,7 +4,8 @@
   <br />
   <em>Your AI identity, portable across every tool.</em>
   <br /><br />
-  <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=blue&label=PyPI" /></a>
+<a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=blue&label=PyPI" /></a>
+  <a href="https://pepy.tech/projects/aura-ctx"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/aura-ctx?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads" /></a>
   <a href="https://github.com/WozGeek/BettaAura/actions"><img alt="CI" src="https://github.com/WozGeek/BettaAura/actions/workflows/ci.yml/badge.svg" /></a>
   <a href="https://github.com/WozGeek/BettaAura/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green" /></a>
   <a href="https://pypi.org/project/aura-ctx/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/aura-ctx" /></a>
