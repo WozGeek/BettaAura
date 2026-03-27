@@ -210,9 +210,12 @@ def delete_pack(name: str) -> bool:
 # Templates
 # ---------------------------------------------------------------------------
 TEMPLATES: dict[str, dict] = {
+    # -----------------------------------------------------------------
+    # General-purpose
+    # -----------------------------------------------------------------
     "developer": {
         "scope": "development",
-        "description": "Your development context — languages, frameworks, coding style.",
+        "description": "General-purpose development context — languages, frameworks, coding style.",
         "facts": [
             {"key": "languages.primary", "value": ["Python", "TypeScript"], "type": "skill"},
             {"key": "languages.learning", "value": ["Rust"], "type": "skill"},
@@ -247,7 +250,7 @@ TEMPLATES: dict[str, dict] = {
     },
     "researcher": {
         "scope": "research",
-        "description": "Your research interests and methodology preferences.",
+        "description": "Research interests and methodology preferences.",
         "facts": [
             {"key": "domains", "value": ["AI/ML", "distributed systems"], "type": "context"},
             {"key": "methodology", "value": "Evidence-based, prefer primary sources", "type": "style"},
@@ -261,7 +264,7 @@ TEMPLATES: dict[str, dict] = {
     },
     "work": {
         "scope": "work",
-        "description": "Your professional context — role, company, communication style.",
+        "description": "Professional context — role, company, communication style.",
         "facts": [
             {"key": "role", "value": "Software Engineer", "type": "identity"},
             {"key": "company", "value": "Acme Corp", "type": "identity"},
@@ -271,6 +274,198 @@ TEMPLATES: dict[str, dict] = {
         "rules": [
             {"instruction": "Frame recommendations with business impact", "priority": 7},
             {"instruction": "Include time estimates for technical suggestions", "priority": 5},
+        ],
+    },
+    # -----------------------------------------------------------------
+    # Stack-specific
+    # -----------------------------------------------------------------
+    "frontend": {
+        "scope": "development",
+        "description": "Frontend development — React/Next.js, TypeScript, Tailwind, modern web stack.",
+        "facts": [
+            {"key": "languages.primary", "value": ["TypeScript", "JavaScript"], "type": "skill"},
+            {"key": "frameworks", "value": ["Next.js", "React", "Tailwind CSS", "Vite"], "type": "skill"},
+            {"key": "editor", "value": "Cursor", "type": "preference"},
+            {"key": "style.design", "value": "Mobile-first, dark themes, minimal UI", "type": "style"},
+            {"key": "state_management", "value": "React Server Components when possible, Zustand for client state", "type": "preference"},
+            {"key": "testing", "value": "Playwright for E2E, Vitest for unit", "type": "preference"},
+        ],
+        "rules": [
+            {"instruction": "Always use TypeScript strict mode — no 'any', no implicit returns", "priority": 9},
+            {"instruction": "Use Tailwind utility classes only — no custom CSS unless unavoidable", "priority": 8},
+            {"instruction": "Prefer Server Components by default, use 'use client' only when needed", "priority": 8},
+            {"instruction": "Mobile-first responsive design — start from smallest viewport", "priority": 7},
+            {"instruction": "Accessibility first — semantic HTML, ARIA labels, keyboard navigation", "priority": 7},
+            {"instruction": "Dark theme by default — use CSS variables for all colors", "priority": 6},
+        ],
+    },
+    "backend": {
+        "scope": "development",
+        "description": "Backend development — APIs, databases, infrastructure, Python or Node.",
+        "facts": [
+            {"key": "languages.primary", "value": ["Python", "TypeScript"], "type": "skill"},
+            {"key": "frameworks", "value": ["FastAPI", "SQLAlchemy", "Pydantic"], "type": "skill"},
+            {"key": "databases", "value": ["PostgreSQL", "Redis"], "type": "skill"},
+            {"key": "infrastructure", "value": ["Docker", "GitHub Actions"], "type": "skill"},
+            {"key": "api_style", "value": "REST with OpenAPI spec, considering GraphQL for complex queries", "type": "preference"},
+        ],
+        "rules": [
+            {"instruction": "Always validate input with Pydantic models or Zod schemas — never trust raw input", "priority": 9},
+            {"instruction": "Write database migrations for every schema change — no manual ALTER TABLE", "priority": 8},
+            {"instruction": "Every endpoint needs error handling with proper HTTP status codes", "priority": 8},
+            {"instruction": "Log at structured levels (info, warning, error) — no print() in production", "priority": 7},
+            {"instruction": "Write integration tests against a real database, not mocks", "priority": 6},
+        ],
+    },
+    "data-scientist": {
+        "scope": "analysis",
+        "description": "Data science, ML, and analytics — Python, notebooks, visualization.",
+        "facts": [
+            {"key": "languages.primary", "value": ["Python", "SQL"], "type": "skill"},
+            {"key": "tools", "value": ["pandas", "NumPy", "scikit-learn", "Jupyter", "matplotlib"], "type": "skill"},
+            {"key": "ml_frameworks", "value": ["PyTorch", "Hugging Face Transformers"], "type": "skill"},
+            {"key": "visualization", "value": ["matplotlib", "seaborn", "Plotly"], "type": "preference"},
+            {"key": "data_sources", "value": ["PostgreSQL", "CSV/Parquet", "REST APIs"], "type": "context"},
+        ],
+        "rules": [
+            {"instruction": "Always cite data sources — never invent numbers or statistics", "priority": 10},
+            {"instruction": "Flag assumptions and confidence levels in every analysis", "priority": 9},
+            {"instruction": "Prefer charts over tables — explain what the data means, not just what it shows", "priority": 8},
+            {"instruction": "Reproducibility matters — include random seeds, version pins, and data checksums", "priority": 8},
+            {"instruction": "Start with simple models before reaching for deep learning", "priority": 7},
+            {"instruction": "Show your work — include intermediate steps, not just final results", "priority": 6},
+        ],
+    },
+    "mobile": {
+        "scope": "development",
+        "description": "Mobile development — React Native, Swift, Flutter, cross-platform apps.",
+        "facts": [
+            {"key": "languages.primary", "value": ["TypeScript", "Swift"], "type": "skill"},
+            {"key": "frameworks", "value": ["React Native", "Expo"], "type": "skill"},
+            {"key": "platforms", "value": ["iOS", "Android"], "type": "context"},
+            {"key": "tools", "value": ["Xcode", "Android Studio", "Flipper"], "type": "preference"},
+            {"key": "state_management", "value": "Zustand or React Query for server state", "type": "preference"},
+        ],
+        "rules": [
+            {"instruction": "Always handle offline state — assume the network is unreliable", "priority": 9},
+            {"instruction": "Test on real devices, not just simulators", "priority": 8},
+            {"instruction": "Respect platform conventions — iOS Human Interface Guidelines, Material Design", "priority": 8},
+            {"instruction": "Performance first — no unnecessary re-renders, lazy load heavy screens", "priority": 7},
+            {"instruction": "Accessibility from day one — VoiceOver, TalkBack, dynamic font sizes", "priority": 7},
+        ],
+    },
+    "devops": {
+        "scope": "infrastructure",
+        "description": "DevOps and SRE — CI/CD, containers, cloud, monitoring, reliability.",
+        "facts": [
+            {"key": "languages.primary", "value": ["Python", "Bash", "Go"], "type": "skill"},
+            {"key": "tools", "value": ["Docker", "Kubernetes", "Terraform", "GitHub Actions"], "type": "skill"},
+            {"key": "cloud", "value": ["AWS", "GCP"], "type": "skill"},
+            {"key": "monitoring", "value": ["Prometheus", "Grafana", "Datadog"], "type": "preference"},
+            {"key": "methodology", "value": "Infrastructure as Code, GitOps, immutable deployments", "type": "style"},
+        ],
+        "rules": [
+            {"instruction": "Everything as code — no manual infrastructure changes, ever", "priority": 10},
+            {"instruction": "Every deployment must be reversible — rollback plan before shipping", "priority": 9},
+            {"instruction": "Alerts must be actionable — no alert fatigue, no noisy dashboards", "priority": 8},
+            {"instruction": "Least privilege by default — no admin credentials in scripts or env vars", "priority": 8},
+            {"instruction": "Document runbooks for every critical service — assume you're on-call at 3 AM", "priority": 7},
+        ],
+    },
+    # -----------------------------------------------------------------
+    # Role-specific
+    # -----------------------------------------------------------------
+    "founder": {
+        "scope": "product",
+        "description": "Indie hacker / founder — product thinking, speed, MVP mindset.",
+        "facts": [
+            {"key": "role", "value": "Solo founder building an MVP", "type": "identity"},
+            {"key": "stack", "value": ["Python", "Next.js", "Supabase", "Vercel"], "type": "skill"},
+            {"key": "tools", "value": ["Cursor", "Claude", "ChatGPT", "Linear"], "type": "preference"},
+            {"key": "stage", "value": "Pre-launch, iterating fast, seeking product-market fit", "type": "context"},
+            {"key": "constraints", "value": "Solo dev, limited budget, time is the bottleneck", "type": "constraint"},
+        ],
+        "rules": [
+            {"instruction": "Always think MVP — ship the smallest thing that tests the hypothesis", "priority": 10},
+            {"instruction": "User value over code quality — working > perfect", "priority": 9},
+            {"instruction": "Give me the fastest path, not the most elegant one", "priority": 8},
+            {"instruction": "When suggesting tools or services, prefer free tiers and open source", "priority": 7},
+            {"instruction": "Challenge my assumptions — tell me when an idea won't work", "priority": 7},
+        ],
+    },
+    "student": {
+        "scope": "education",
+        "description": "Student / learner — studying, building projects, learning new skills.",
+        "facts": [
+            {"key": "role", "value": "CS student learning to build real projects", "type": "identity"},
+            {"key": "languages.learning", "value": ["Python", "JavaScript"], "type": "skill"},
+            {"key": "interests", "value": ["AI/ML", "web development", "open source"], "type": "context"},
+            {"key": "level", "value": "Intermediate — understands basics, building toward advanced", "type": "context"},
+        ],
+        "rules": [
+            {"instruction": "Explain concepts step by step — don't skip fundamentals", "priority": 9},
+            {"instruction": "Always explain WHY, not just HOW — I want to understand the reasoning", "priority": 9},
+            {"instruction": "When showing code, include comments explaining non-obvious parts", "priority": 8},
+            {"instruction": "Suggest projects or exercises to practice new concepts", "priority": 7},
+            {"instruction": "Point me to official docs and good learning resources when relevant", "priority": 6},
+            {"instruction": "Don't do my homework — guide me to the answer instead", "priority": 8},
+        ],
+    },
+    "marketer": {
+        "scope": "marketing",
+        "description": "Content marketer / growth — copywriting, SEO, social media, analytics.",
+        "facts": [
+            {"key": "role", "value": "Content marketer focused on growth", "type": "identity"},
+            {"key": "channels", "value": ["Twitter/X", "LinkedIn", "Blog", "Newsletter"], "type": "context"},
+            {"key": "tools", "value": ["Google Analytics", "Ahrefs", "Notion", "Canva"], "type": "preference"},
+            {"key": "tone", "value": "Conversational, punchy, data-backed", "type": "style"},
+            {"key": "audience", "value": "Technical professionals and early adopters", "type": "context"},
+        ],
+        "rules": [
+            {"instruction": "Lead with a hook — first line must stop the scroll", "priority": 9},
+            {"instruction": "Back claims with numbers — no vague statements", "priority": 8},
+            {"instruction": "Write at an 8th-grade reading level — simple beats clever", "priority": 8},
+            {"instruction": "Every piece of content needs a clear CTA", "priority": 7},
+            {"instruction": "SEO matters — include keywords naturally, don't stuff them", "priority": 6},
+        ],
+    },
+    "designer": {
+        "scope": "design",
+        "description": "Product designer / UX — user research, wireframes, design systems.",
+        "facts": [
+            {"key": "role", "value": "Product designer", "type": "identity"},
+            {"key": "tools", "value": ["Figma", "Framer", "Storybook"], "type": "preference"},
+            {"key": "methodology", "value": "User-centered design, iterative prototyping", "type": "style"},
+            {"key": "focus", "value": "Design systems, interaction design, accessibility", "type": "context"},
+        ],
+        "rules": [
+            {"instruction": "Always start with the user problem, not the solution", "priority": 9},
+            {"instruction": "Accessibility is not optional — WCAG 2.1 AA minimum", "priority": 9},
+            {"instruction": "When suggesting UI patterns, reference existing design systems (Radix, shadcn)", "priority": 7},
+            {"instruction": "Mobile-first wireframes before desktop", "priority": 7},
+            {"instruction": "Less is more — remove before adding", "priority": 6},
+        ],
+    },
+    # -----------------------------------------------------------------
+    # AI-specific
+    # -----------------------------------------------------------------
+    "ai-builder": {
+        "scope": "development",
+        "description": "AI/LLM builder — agents, RAG, fine-tuning, prompt engineering, tooling.",
+        "facts": [
+            {"key": "languages.primary", "value": ["Python", "TypeScript"], "type": "skill"},
+            {"key": "frameworks", "value": ["LangChain", "LlamaIndex", "Hugging Face", "OpenAI SDK"], "type": "skill"},
+            {"key": "tools", "value": ["Ollama", "vLLM", "Claude API", "OpenAI API"], "type": "preference"},
+            {"key": "focus", "value": "RAG pipelines, agent systems, MCP servers, prompt optimization", "type": "context"},
+            {"key": "models", "value": ["Claude", "GPT-4", "Llama", "Mistral"], "type": "context"},
+        ],
+        "rules": [
+            {"instruction": "Always consider token cost and latency — efficiency matters at scale", "priority": 9},
+            {"instruction": "Prefer structured outputs (JSON, XML) over free-text when parsing LLM responses", "priority": 8},
+            {"instruction": "Always add retry logic and fallbacks for API calls — LLMs fail", "priority": 8},
+            {"instruction": "Eval before shipping — no prompt change without measuring impact", "priority": 8},
+            {"instruction": "RAG over fine-tuning unless you have a clear reason to fine-tune", "priority": 7},
+            {"instruction": "Show me the prompt — never hide the system prompt in abstractions", "priority": 7},
         ],
     },
 }
