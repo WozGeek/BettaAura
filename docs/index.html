@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>aura — Portable AI Context</title>
-<meta name="description" content="One identity across Claude, ChatGPT, Cursor, and Gemini. Open-source CLI that makes your AI context portable via MCP.">
+<title>aura — Your portable AI identity</title>
+<meta name="description" content="Stop re-explaining yourself to every AI tool. Define your identity once in YAML, serve it to Claude, ChatGPT, Cursor, and Gemini via MCP. Open source.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -25,7 +25,8 @@ a:hover{text-decoration:underline}
 .hero{padding:80px 0 40px;text-align:center}
 .hero-logo{font-size:3rem;font-weight:600;letter-spacing:-0.03em;margin-bottom:8px}
 .hero-logo span{color:var(--accent)}
-.hero-sub{font-family:var(--serif);font-size:1.15rem;color:var(--muted);font-style:italic;margin-bottom:32px}
+.hero-sub{font-family:var(--serif);font-size:1.15rem;color:var(--muted);font-style:italic;margin-bottom:12px}
+.hero-desc{font-size:0.85rem;color:var(--muted);margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto;line-height:1.8}
 .hero-install{display:inline-block;background:var(--surface);border:1px solid var(--border);padding:12px 28px;border-radius:8px;font-size:0.95rem;cursor:pointer;transition:border-color 0.2s}
 .hero-install:hover{border-color:var(--accent)}
 .hero-install code{color:var(--green)}
@@ -60,11 +61,23 @@ section p{color:var(--muted);margin-bottom:16px;font-size:0.88rem;line-height:1.
 .feature strong{display:block;font-size:0.85rem;margin-bottom:4px}
 .feature p{font-size:0.78rem;margin:0;color:var(--muted)}
 
+/* Highlights */
+.highlights{margin:20px 0;font-size:0.85rem;line-height:2.2}
+.highlights li{color:var(--muted);margin-bottom:4px;list-style:none}
+.highlights li::before{content:'✓ ';color:var(--green);font-weight:600}
+.highlights li strong{color:var(--text)}
+
 /* Commands table */
 .cmd-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:16px 0}
 .cmd-table th{text-align:left;color:var(--muted);font-weight:400;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em}
 .cmd-table td{padding:6px 0;border-bottom:1px solid #141416}
 .cmd-table td:first-child{color:var(--green);white-space:nowrap;padding-right:20px}
+
+/* Templates */
+.templates-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:16px 0}
+.tmpl{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:0.78rem}
+.tmpl code{color:var(--green);font-size:0.82rem}
+.tmpl span{display:block;color:var(--muted);font-size:0.7rem;margin-top:2px}
 
 /* Footer */
 footer{padding:48px 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:0.75rem}
@@ -77,6 +90,7 @@ footer a:hover{color:var(--text)}
   .hero-logo{font-size:2.2rem}
   .features{grid-template-columns:1fr}
   .tools-grid{grid-template-columns:1fr 1fr}
+  .templates-grid{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -86,21 +100,34 @@ footer a:hover{color:var(--text)}
 
   <div class="hero">
     <div class="hero-logo"><span>✦</span> aura</div>
-    <div class="hero-sub">Your portable AI context. One identity across every tool.</div>
+    <div class="hero-sub">Stop re-explaining yourself to every AI tool.</div>
+    <div class="hero-desc">
+      Define who you are — stack, style, rules — once, in plain YAML.
+      aura serves your identity to Claude, ChatGPT, Cursor, and Gemini via MCP.
+      100% local. No cloud. No lock-in.
+    </div>
     <div class="hero-install" onclick="navigator.clipboard.writeText('pip install aura-ctx').then(()=>this.querySelector('small').textContent=' copied!')">
       <code>pip install aura-ctx</code> <small style="color:var(--muted);font-size:0.75rem"></small>
     </div>
     <div class="hero-badges">
       <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=blue&label=PyPI" /></a>
-      <a href="https://github.com/WozGeek/BettaAura"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/BettaAura?style=flat" /></a>
+      <a href="https://pepy.tech/projects/aura-ctx"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/aura-ctx?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads" /></a>
+      <a href="https://github.com/WozGeek/aura-ctx"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/aura-ctx?style=flat" /></a>
       <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
     </div>
   </div>
 
   <section>
-    <h2>The Problem</h2>
-    <p>Every AI tool builds a separate picture of who you are. Claude knows your stack. ChatGPT knows your preferences. Cursor reads your code. None of them share context. None of them let you export it.</p>
-    <p>aura scans your machine, builds your identity as structured YAML, and serves it to every MCP-compatible tool. One command. 30 seconds.</p>
+    <h2>Highlights</h2>
+    <ul class="highlights">
+      <li><strong>30-second setup</strong> — scan, onboard, configure, serve in one command</li>
+      <li><strong>14 templates</strong> — frontend, backend, data-scientist, founder, student, and more</li>
+      <li><strong>Cross-tool</strong> — Claude, ChatGPT, Cursor, Gemini, any MCP client</li>
+      <li><strong>Smart token delivery</strong> — 3 levels so AI tools only load what they need</li>
+      <li><strong>Secret scanning</strong> — catches leaked API keys before they reach an LLM</li>
+      <li><strong>File watcher</strong> — hot-reload when you edit a YAML pack</li>
+      <li><strong>No cloud, no telemetry</strong> — YAML on your machine, fully editable</li>
+    </ul>
   </section>
 
   <section>
@@ -108,15 +135,21 @@ footer a:hover{color:var(--text)}
     <div class="terminal">
       <span class="prompt">$</span> pip install aura-ctx<br>
       <span class="prompt">$</span> aura quickstart<br><br>
-      <span class="output">✦ Scanning your machine...</span><br>
-      <span class="output">  Found: TypeScript, Python, Next.js, FastAPI, Cursor, Node.js</span><br>
-      <span class="output">  Projects: aura, kipedia, hotepia</span><br>
-      <span class="output">✦ Pack saved: developer (12 facts)</span><br><br>
-      <span class="output">✦ Starting MCP server on localhost:3847</span><br>
-      <span class="output">  Serving 3 context packs</span><br>
-      <span class="output">  Claude Desktop ✓  Cursor ✓  Gemini CLI ✓</span>
+      <span class="output">Step 1/5 — Scanning your machine...</span><br>
+      <span class="output">  ✦ Detected 12 facts about your dev environment</span><br><br>
+      <span class="output">Step 2/5 — Quick questions about you...</span><br>
+      <span class="output">  ✦ Created writer (2 facts, 3 rules)</span><br>
+      <span class="output">  ✦ Created work (2 facts, 0 rules)</span><br><br>
+      <span class="output">Step 3/5 — Configuring AI tools...</span><br>
+      <span class="output">  ✦ Claude Desktop configured</span><br>
+      <span class="output">  ✦ Cursor configured</span><br><br>
+      <span class="output">Step 4/5 — Security audit...</span><br>
+      <span class="output">  ✦ All clean — no secrets detected</span><br><br>
+      <span class="output">Step 5/5 — Starting MCP server...</span><br>
+      <span class="output">  ✦ http://localhost:3847/mcp</span><br>
+      <span class="output">  Restart your AI tools — they know you now.</span>
     </div>
-    <p>That's it. Open any AI tool. It already knows you.</p>
+    <p>30 seconds. No Docker. No database. No cloud account.</p>
   </section>
 
   <section>
@@ -143,7 +176,33 @@ footer a:hover{color:var(--text)}
         <span class="tool-badge badge-manual">Manual setup</span>
       </div>
     </div>
-    <p>Any MCP-compatible client can connect to aura's server at <code style="color:var(--green)">localhost:3847</code>.</p>
+    <p>Any MCP-compatible client can connect to <code style="color:var(--green)">localhost:3847</code>.</p>
+    <p style="font-size:0.78rem"><a href="https://modelcontextprotocol.io">What's MCP?</a> — An open standard that lets AI tools connect to local data sources.</p>
+  </section>
+
+  <section>
+    <h2>Templates</h2>
+    <p>14 built-in templates. Each includes facts and AI rules tailored to the profile.</p>
+    <div class="templates-grid">
+      <div class="tmpl"><code>frontend</code><span>React, Next.js, Tailwind</span></div>
+      <div class="tmpl"><code>backend</code><span>FastAPI, SQL, Docker</span></div>
+      <div class="tmpl"><code>data-scientist</code><span>pandas, PyTorch, Jupyter</span></div>
+      <div class="tmpl"><code>mobile</code><span>React Native, Swift</span></div>
+      <div class="tmpl"><code>devops</code><span>K8s, Terraform, AWS</span></div>
+      <div class="tmpl"><code>ai-builder</code><span>LangChain, RAG, agents</span></div>
+      <div class="tmpl"><code>founder</code><span>MVP, speed, product</span></div>
+      <div class="tmpl"><code>student</code><span>Learning, step-by-step</span></div>
+      <div class="tmpl"><code>marketer</code><span>Copy, SEO, growth</span></div>
+      <div class="tmpl"><code>designer</code><span>UX, Figma, a11y</span></div>
+      <div class="tmpl"><code>developer</code><span>General dev context</span></div>
+      <div class="tmpl"><code>writer</code><span>Tone, style, audience</span></div>
+      <div class="tmpl"><code>researcher</code><span>Methodology, sources</span></div>
+      <div class="tmpl"><code>work</code><span>Role, company, team</span></div>
+    </div>
+    <div class="terminal">
+      <span class="prompt">$</span> aura create mydev <span class="flag">-t</span> frontend<br>
+      <span class="prompt">$</span> aura show mydev
+    </div>
   </section>
 
   <section>
@@ -151,7 +210,7 @@ footer a:hover{color:var(--text)}
     <div class="features">
       <div class="feature">
         <strong>Auto-Scan</strong>
-        <p>Detects languages, frameworks, tools, projects, editor, git identity from your machine.</p>
+        <p>Detects languages, frameworks, tools, projects, editor, git identity. Incremental — only re-scans what changed.</p>
       </div>
       <div class="feature">
         <strong>Context Packs</strong>
@@ -159,27 +218,23 @@ footer a:hover{color:var(--text)}
       </div>
       <div class="feature">
         <strong>MCP Server</strong>
-        <p>Full Model Context Protocol server. Resources, tools, prompts. HTTP + SSE.</p>
+        <p>Full Model Context Protocol. Resources, tools, prompts. HTTP + SSE. 3-level token delivery.</p>
+      </div>
+      <div class="feature">
+        <strong>Secret Scanning</strong>
+        <p>Detects 30+ patterns (AWS keys, GitHub tokens, API keys). Auto-redacts before serving to LLMs.</p>
       </div>
       <div class="feature">
         <strong>Import / Export</strong>
         <p>Import from ChatGPT & Claude. Export to system-prompt, cursorrules, and more.</p>
       </div>
       <div class="feature">
-        <strong>Deep Extraction</strong>
-        <p>Extract facts from conversations using a local LLM via Ollama. Data never leaves your machine.</p>
+        <strong>File Watcher</strong>
+        <p>aura serve --watch hot-reloads when you edit a YAML pack. Zero restart.</p>
       </div>
       <div class="feature">
-        <strong>Pack Doctor</strong>
-        <p>Detects bloat, stale facts, duplicates, missing rules. Health score 0–100.</p>
-      </div>
-      <div class="feature">
-        <strong>Memory Decay</strong>
-        <p>Facts have type-aware TTL. Identity never expires. Context fades after 90 days. Auto-consolidation merges duplicates.</p>
-      </div>
-      <div class="feature">
-        <strong>Security</strong>
-        <p>Token auth, scoped serving, read-only mode. Localhost only. No telemetry.</p>
+        <strong>Pack Health</strong>
+        <p>Doctor detects bloat, stale facts, duplicates, secrets. Consolidation engine merges duplicates. Memory decay with TTL.</p>
       </div>
       <div class="feature">
         <strong>Local-First</strong>
@@ -192,20 +247,24 @@ footer a:hover{color:var(--text)}
     <h2>Commands</h2>
     <table class="cmd-table">
       <tr><th>Command</th><th>Description</th></tr>
-      <tr><td>aura quickstart</td><td>Scan + onboard + configure + serve</td></tr>
+      <tr><td>aura quickstart</td><td>Scan + onboard + setup + audit + serve</td></tr>
       <tr><td>aura scan</td><td>Auto-detect your stack</td></tr>
       <tr><td>aura onboard</td><td>5 questions to capture your identity</td></tr>
       <tr><td>aura serve</td><td>Start MCP server</td></tr>
-      <tr><td>aura setup</td><td>Configure Claude, Cursor, Gemini, ChatGPT</td></tr>
+      <tr><td>aura serve --watch</td><td>Start with hot-reload on YAML changes</td></tr>
+      <tr><td>aura setup</td><td>Configure Claude, Cursor, Gemini</td></tr>
+      <tr><td>aura templates</td><td>List all 14 templates</td></tr>
+      <tr><td>aura create &lt;n&gt; -t &lt;t&gt;</td><td>Create pack from template</td></tr>
       <tr><td>aura list</td><td>List all packs</td></tr>
       <tr><td>aura show &lt;pack&gt;</td><td>Display a pack</td></tr>
-      <tr><td>aura add &lt;pack&gt; &lt;k&gt; &lt;v&gt;</td><td>Add a fact</td></tr>
-      <tr><td>aura doctor</td><td>Health check — bloat, stale, duplicates</td></tr>
+      <tr><td>aura add &lt;p&gt; &lt;k&gt; &lt;v&gt;</td><td>Add a fact</td></tr>
+      <tr><td>aura doctor</td><td>Health check — bloat, stale, secrets</td></tr>
+      <tr><td>aura audit</td><td>Scan for leaked API keys and tokens</td></tr>
+      <tr><td>aura audit --fix</td><td>Auto-redact critical secrets</td></tr>
       <tr><td>aura consolidate</td><td>Merge duplicates, find contradictions</td></tr>
       <tr><td>aura decay</td><td>Remove expired facts (type-aware TTL)</td></tr>
       <tr><td>aura export -f &lt;fmt&gt;</td><td>Export to any format</td></tr>
       <tr><td>aura import -s &lt;src&gt;</td><td>Import from ChatGPT / Claude</td></tr>
-      <tr><td>aura extract</td><td>LLM-based fact extraction</td></tr>
       <tr><td>aura diff &lt;a&gt; &lt;b&gt;</td><td>Compare two packs</td></tr>
     </table>
   </section>
@@ -215,25 +274,26 @@ footer a:hover{color:var(--text)}
     <div class="terminal">
       <span class="comment"># Basic — localhost only</span><br>
       <span class="prompt">$</span> aura serve<br><br>
-      <span class="comment"># Token auth + read-only + scoped</span><br>
-      <span class="prompt">$</span> aura serve <span class="flag">--token</span> s3cret <span class="flag">--packs</span> developer <span class="flag">--read-only</span>
+      <span class="comment"># Full lockdown</span><br>
+      <span class="prompt">$</span> aura serve <span class="flag">--token</span> s3cret <span class="flag">--packs</span> developer <span class="flag">--read-only</span> <span class="flag">--watch</span>
     </div>
-    <p>Binds to 127.0.0.1 only. Optional Bearer token auth. Scoped pack serving. Read-only mode. AURA_TOKEN env var. No telemetry. No analytics. No cloud. Your files, your machine, your rules.</p>
+    <p>Binds to 127.0.0.1 only. Optional Bearer token auth. Scoped pack serving. Read-only mode. Secret scanning with auto-redaction at serve time. No telemetry. No analytics. No cloud.</p>
   </section>
 
   <section style="text-align:center;padding:64px 0">
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:24px">7,800+ lines · 151 tests · 22 commands · 14 templates · MIT</p>
     <div class="terminal" style="display:inline-block;text-align:left">
       <span class="prompt">$</span> pip install aura-ctx<br>
       <span class="prompt">$</span> aura quickstart
     </div>
-    <p style="margin-top:16px"><a href="https://github.com/WozGeek/BettaAura">GitHub</a> · <a href="https://pypi.org/project/aura-ctx/">PyPI</a></p>
+    <p style="margin-top:16px"><a href="https://github.com/WozGeek/aura-ctx">GitHub</a> · <a href="https://pypi.org/project/aura-ctx/">PyPI</a> · <a href="https://github.com/WozGeek/aura-ctx/blob/main/CONTRIBUTING.md">Contribute</a></p>
   </section>
 
 </div>
 
 <footer>
   <div class="container">
-    <p>aura is open-source · <a href="https://github.com/WozGeek/BettaAura">MIT License</a> · Built by <a href="https://github.com/WozGeek">WozGeek</a></p>
+    <p>aura is open-source · <a href="https://github.com/WozGeek/aura-ctx">MIT License</a> · © <a href="https://github.com/WozGeek">Enoch Afanwoubo</a></p>
   </div>
 </footer>
 

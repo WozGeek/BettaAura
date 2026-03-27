@@ -5,7 +5,7 @@ Thanks for your interest in contributing to aura. Here's how to get started.
 ## Setup
 
 ```bash
-git clone https://github.com/WozGeek/BettaAura.git
+git clone https://github.com/WozGeek/aura-ctx.git
 cd aura
 pip install -e ".[dev]"
 ```
@@ -24,7 +24,7 @@ ruff check aura/
 
 ## What to work on
 
-Check the [Issues](https://github.com/WozGeek/BettaAura/issues) tab. Good first contributions:
+Check the [Issues](https://github.com/WozGeek/aura-ctx/issues) tab. Good first contributions:
 
 - **New export formats** — Windsurf, GitHub Copilot, Gemini, AGENTS.md
 - **New importers** — Claude exports, Gemini exports
