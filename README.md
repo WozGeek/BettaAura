@@ -1,103 +1,78 @@
 <p align="center">
   <br />
-  <code>✦ aura</code>
-  <br /><br />
-  <strong>Stop re-explaining yourself to every AI tool.</strong>
+  <strong><code>✦ aura</code></strong>
   <br />
-  <sub>Define who you are once. Serve your identity to every AI — locally, privately, instantly.</sub>
+  <em>Stop re-explaining yourself to every AI tool.</em>
   <br /><br />
-  <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=black&label=aura-ctx" /></a>
-  <a href="https://pepy.tech/projects/aura-ctx"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/aura-ctx?period=total&units=international_system&left_color=black&right_color=black&left_text=downloads" /></a>
-  <a href="https://github.com/WozGeek/aura-ctx/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-black" /></a>
-  <a href="https://pypi.org/project/aura-ctx/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/aura-ctx?color=black" /></a>
-  <a href="https://github.com/WozGeek/aura-ctx/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/aura-ctx?style=flat&color=black" /></a>
+  <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=blue&label=PyPI" /></a>
+  <a href="https://pepy.tech/projects/aura-ctx"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/aura-ctx?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads" /></a>
+  <a href="https://github.com/WozGeek/aura-ctx/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-green" /></a>
+  <a href="https://pypi.org/project/aura-ctx/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/aura-ctx" /></a>
+  <a href="https://github.com/WozGeek/aura-ctx/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/aura-ctx?style=flat" /></a>
 </p>
 
 <p align="center">
-  <a href="https://wozgeek.github.io/aura-ctx">Website</a> ·
-  <a href="#quick-start">Quick Start</a> ·
-  <a href="#how-it-works">How It Works</a> ·
-  <a href="#supported-tools">Supported Tools</a> ·
-  <a href="#commands">Commands</a> ·
+  <a href="https://wozgeek.github.io/aura-ctx">Website</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#supported-tools">Supported Tools</a> •
+  <a href="#commands">Commands</a> •
   <a href="#security">Security</a>
 </p>
 
 ---
 
-<!-- TODO: terminal recording GIF -->
-<!-- Record: asciinema rec demo.cast && agg demo.cast demo.gif -->
-<!-- Show: pip install aura-ctx && aura quickstart (30-second flow) -->
+Define who you are — your stack, your style, your rules — **once**, in plain YAML files you own. aura serves that identity to Claude, ChatGPT, Cursor, and Gemini through the [Model Context Protocol](https://modelcontextprotocol.io). 100% local. No cloud. No lock-in.
 
-## The problem
+<!-- TODO: Add terminal recording GIF here
+     Record with: asciinema rec demo.cast && agg demo.cast demo.gif
+     Show: pip install aura-ctx && aura quickstart (30 second flow) -->
 
-Every AI tool starts from scratch. Claude doesn't know what ChatGPT learned.
-Cursor doesn't know your writing style. Gemini has no idea what framework you
-prefer.
+### Highlights
 
-You re-explain yourself dozens of times a day — your stack, your rules, your
-role, your preferences. Every new conversation. Every new tool. Every new
-session.
+- **30-second setup** — `pip install aura-ctx && aura quickstart` scans your machine, asks 5 questions, starts serving
+- **14 templates** — `aura create -t frontend`, `data-scientist`, `founder`, `student`, and 10 more
+- **Cross-tool** — Claude Desktop, ChatGPT Desktop, Cursor, Gemini CLI, any MCP client
+- **Smart token delivery** — 3 levels (~50, ~500, ~1000+ tokens) so AI tools only load what they need
+- **Secret scanning** — auto-detects leaked API keys before they reach an LLM, redacts on serve
+- **File watcher** — `aura serve --watch` hot-reloads when you edit a YAML pack
+- **Human-readable** — YAML files in `~/.aura/packs/`, git-friendly, fully editable
+- **No cloud, no telemetry, no tracking** — everything stays on your machine
 
-The industry is building solutions at the wrong layer:
+## Why aura
 
-| Layer                   | What it solves                      | Tools                        |
-| ----------------------- | ----------------------------------- | ---------------------------- |
-| **Memory**              | What happened in past conversations | Mem0, Zep, DeltaMemory       |
-| **Context engineering** | What the AI should know right now   | LACP, Claudesidian, OpenClaw |
-| **Identity**            | Who you are, across everything      | **aura**                     |
+Every AI tool starts from scratch. Claude doesn't know what ChatGPT learned. Cursor doesn't know your writing style. Gemini has no idea what framework you prefer.
 
-Memory is session history. Context is prompt engineering. **Identity is who you
-are** — your stack, your style, your rules, your role — structured, portable,
-and owned by you.
+The industry is building solutions for this, but at the wrong layer:
 
-**aura is the identity layer.**
+| Layer | What it solves | Examples |
+|-------|---------------|----------|
+| **Memory** | What happened in past conversations | Mem0, Zep, DeltaMemory |
+| **Context engineering** | What the AI should know right now | LACP, Claudesidian, OpenClaw |
+| **Identity** | Who you are, across everything | **aura** |
 
----
+Memory is session history. Context is prompt engineering. **Identity is who you are** — your stack, your style, your rules, your role — structured, portable, and owned by you.
 
-## How aura solves it
+aura is the identity layer.
 
-aura scans your machine, asks you five questions, and generates plain YAML
-context packs stored locally at `~/.aura/packs/`. It then exposes those packs to
-any AI tool through the
-[Model Context Protocol](https://modelcontextprotocol.io) — a local MCP server
-running on `localhost:3847`.
+## Who this is for
 
-Every AI that supports MCP can now read your identity. One definition. Every
-tool. Zero copy-paste.
+**You use multiple AI tools daily** — Claude for thinking, Cursor for coding, ChatGPT for drafting, Gemini for research. You're tired of re-explaining your stack and style to each one.
 
-```
-You
-│
-├── aura scan          Detects languages, frameworks, tools, git identity
-├── aura onboard       5 questions → writing style, role, preferences, rules
-├── aura import        Pulls context from ChatGPT & Claude exports
-│
-▼
-Context Packs (YAML)   ~/.aura/packs/developer.yaml
-│                      ~/.aura/packs/writer.yaml
-│                      ~/.aura/packs/work.yaml
-│
-▼
-MCP Server             localhost:3847
-│
-├──▶ Claude Desktop    (auto-configured)
-├──▶ ChatGPT Desktop   (SSE)
-├──▶ Cursor IDE        (auto-configured)
-└──▶ Gemini CLI        (auto-configured)
-```
+**You're a developer who values control** — you want your context in plain text files you can read, edit, and version-control. Not locked inside a platform.
 
-100% local. No cloud. No telemetry. No lock-in.
+**You're building with AI, not just using it** — you care about token efficiency, MCP, and how your tools talk to each other.
 
----
+If you've ever pasted your coding style into a system prompt and wished it could just follow you everywhere — that's what aura does.
 
-## Quick start
+## Quick Start
 
 ```bash
 pip install aura-ctx
 aura quickstart
 ```
 
-That's it. Here's what happens in 30 seconds:
+Here's what happens:
 
 ```
 ✦ aura quickstart
@@ -106,15 +81,13 @@ Step 1/5 — Scanning your machine...
   ✦ Detected 12 facts about your dev environment
 
 Step 2/5 — Quick questions about you...
-  What's your role?                    → Full-stack dev at Acme Corp
-  How do you want AI to talk to you?   → 1 (Direct, no fluff)
-  What are you working on?             → shipping v2 of our dashboard
-  Any rules or pet peeves?             → No corporate jargon, always use TypeScript
-  What human languages?                → English and French
-
-  ✦ Created developer  (8 facts, 4 rules)
-  ✦ Created writer     (2 facts, 3 rules)
-  ✦ Created work       (2 facts, 0 rules)
+  What's your role? → Full-stack dev at Acme Corp
+  How do you want AI to talk to you? → 1 (Direct, no fluff)
+  What are you working on? → shipping v2 of our dashboard
+  Any rules or pet peeves? → No corporate jargon, always use TypeScript
+  What human languages? → English and French
+  ✦ Created writer (2 facts, 3 rules)
+  ✦ Created work (2 facts, 0 rules)
 
 Step 3/5 — Configuring AI tools...
   ✦ Claude Desktop configured
@@ -128,37 +101,83 @@ Step 5/5 — Starting MCP server...
   Restart your AI tools — they know you now.
 ```
 
-No Docker. No database. No cloud account.
+30 seconds. No Docker. No database. No cloud account.
 
----
+## See it work
 
-## Context packs
+After running `aura quickstart`, open Claude Desktop:
 
-Your identity lives in scoped YAML files. Each pack covers a domain —
-development, writing, work, or anything you define. Human-readable.
-Git-friendly. Fully editable. They never leave your machine unless you choose
-otherwise.
+```
+You:    What do you know about me?
+
+Claude: I don't have any information about you!
+        Memory is turned off for your account.
+```
+
+Now restart Claude (so it connects to aura's MCP server):
+
+```
+You:    What do you know about me?
+
+Claude: Here's what I know from your aura context:
+
+        Role: CS student
+        Editor: Cursor
+        Stack: TypeScript, Python, React, FastAPI, Tailwind
+        Projects: aura, kipedia, hotepia
+        Style: Technical, precise, no hand-holding
+        Rules: Always use TypeScript strict mode, no 'any'
+```
+
+Same question. Completely different answer. That's aura.
+
+## How It Works
+
+```
+  You
+   │
+   ├── aura scan          Detects languages, frameworks, tools, projects
+   ├── aura onboard       5 questions → writing style, role, rules
+   ├── aura import        Pulls context from ChatGPT & Claude exports
+   │
+   ▼
+  Context Packs (YAML)    ~/.aura/packs/developer.yaml
+   │                      ~/.aura/packs/writer.yaml
+   │                      ~/.aura/packs/work.yaml
+   │
+   ▼
+  MCP Server              localhost:3847
+   │
+   ├──▶ Claude Desktop    (auto-configured)
+   ├──▶ ChatGPT Desktop   (SSE)
+   ├──▶ Cursor IDE        (auto-configured)
+   └──▶ Gemini CLI        (auto-configured)
+```
+
+> **What's MCP?** The [Model Context Protocol](https://modelcontextprotocol.io) is an open standard that lets AI tools connect to local data sources. aura uses it so Claude, Cursor, and others can read your context without any custom integration.
+
+### Context Packs
+
+Your identity lives in scoped YAML files. Each pack covers a domain — development, writing, work, or anything custom:
 
 ```yaml
 # ~/.aura/packs/developer.yaml
 name: developer
 scope: development
-
 facts:
   - key: languages.primary
     value: [TypeScript, Python]
     type: skill
     confidence: high
-  - key: frameworks
-    value: [Next.js, FastAPI, Tailwind, Supabase]
-    type: skill
   - key: editor
     value: Cursor
     type: preference
+  - key: frameworks
+    value: [Next.js, FastAPI, Tailwind, Supabase]
+    type: skill
   - key: style.code
     value: "Explicit types, functional patterns, minimal comments"
     type: style
-
 rules:
   - instruction: Always use TypeScript strict mode — no 'any'
     priority: 9
@@ -168,39 +187,39 @@ rules:
     priority: 7
 ```
 
-### Smart token delivery
+You own these files. Human-readable. Git-friendly. They never leave your machine unless you choose otherwise.
 
-aura doesn't dump everything into every context window. It serves your identity
-at the right depth, on demand:
+### Three-Level Token Delivery
 
-| Level | MCP Tool            | Tokens   | When                                    |
-| ----- | ------------------- | -------- | --------------------------------------- |
-| 1     | `get_identity_card` | ~50–100  | Auto-called at every conversation start |
-| 2     | `get_user_profile`  | ~200–500 | When the AI needs more about you        |
-| 3     | `get_all_context`   | ~1000+   | Only when explicitly requested          |
+AI tools have limited context windows. aura serves your identity at the right depth:
 
-Most conversations only ever need Level 1. The AI gets your identity without
-burning your context window.
+| Level | MCP Tool | Tokens | When |
+|-------|----------|--------|------|
+| 1 | `get_identity_card` | ~50–100 | Auto-called at conversation start |
+| 2 | `get_user_profile` | ~200–500 | When the AI needs more detail |
+| 3 | `get_all_context` | ~1000+ | Only when explicitly asked |
 
----
+The server instructs AI clients to start with the identity card and drill down only when needed. Most conversations never need the full dump.
 
-## Supported tools
+## Supported Tools
 
-| Tool                | Setup                        | Transport       |
-| ------------------- | ---------------------------- | --------------- |
-| **Claude Desktop**  | `aura setup` — auto          | Streamable HTTP |
-| **Cursor IDE**      | `aura setup` — auto          | Streamable HTTP |
-| **Gemini CLI**      | `aura setup` — auto          | SSE             |
-| **ChatGPT Desktop** | Developer Mode → add SSE URL | SSE             |
-| **Any MCP client**  | Point to `localhost:3847`    | HTTP or SSE     |
+| Tool | Setup | Transport |
+|------|-------|-----------|
+| **Claude Desktop** | `aura setup` — auto | Streamable HTTP |
+| **Cursor IDE** | `aura setup` — auto | Streamable HTTP |
+| **Gemini CLI** | `aura setup` — auto | SSE |
+| **ChatGPT Desktop** | Developer Mode → add SSE URL | SSE |
+| **Any MCP client** | Point to `localhost:3847` | HTTP or SSE |
 
 ```bash
-aura setup   # auto-configures all detected tools
-aura serve   # starts the MCP server on localhost:3847
+aura setup   # writes config for all detected tools
+aura serve   # starts MCP server on localhost:3847
 ```
 
 <details>
-<summary>Claude Desktop — manual config</summary>
+<summary><strong>Claude Desktop</strong></summary>
+
+Auto-configured by `aura setup`. Manual config:
 
 ```json
 {
@@ -209,11 +228,12 @@ aura serve   # starts the MCP server on localhost:3847
   }
 }
 ```
-
 </details>
 
 <details>
-<summary>Cursor IDE — manual config</summary>
+<summary><strong>Cursor IDE</strong></summary>
+
+Auto-configured by `aura setup`. Manual config:
 
 ```json
 {
@@ -222,22 +242,22 @@ aura serve   # starts the MCP server on localhost:3847
   }
 }
 ```
-
 </details>
 
 <details>
-<summary>ChatGPT Desktop — manual config</summary>
+<summary><strong>ChatGPT Desktop</strong></summary>
 
 Settings → Connectors → Advanced → Developer Mode:
 
 ```
 SSE URL: http://localhost:3847/sse
 ```
-
 </details>
 
 <details>
-<summary>Gemini CLI — manual config</summary>
+<summary><strong>Gemini CLI</strong></summary>
+
+Auto-configured by `aura setup`. Manual config:
 
 ```json
 {
@@ -246,160 +266,139 @@ SSE URL: http://localhost:3847/sse
   }
 }
 ```
-
 </details>
-
----
 
 ## Commands
 
 ### Getting started
 
-| Command              | What it does                                               |
-| -------------------- | ---------------------------------------------------------- |
-| `aura quickstart`    | Full setup: scan → onboard → configure → audit → serve     |
-| `aura scan`          | Auto-detect your stack from tools, repos, and config files |
-| `aura onboard`       | 5 questions to generate your context packs                 |
-| `aura setup`         | Auto-configure Claude Desktop, Cursor, Gemini CLI          |
-| `aura serve`         | Start the MCP server on `localhost:3847`                   |
-| `aura serve --watch` | Start with hot-reload on YAML changes                      |
+| Command | What it does |
+|---------|-------------|
+| `aura quickstart` | Full setup: scan → onboard → setup → audit → serve |
+| `aura scan` | Auto-detect your stack from tools, repos, and config files |
+| `aura onboard` | 5 questions to generate your context packs |
+| `aura setup` | Auto-configure Claude Desktop, Cursor, Gemini |
+| `aura serve` | Start the MCP server |
+| `aura serve --watch` | Start with hot-reload on YAML changes |
 
 ### Managing packs
 
-| Command                            | What it does                    |
-| ---------------------------------- | ------------------------------- |
-| `aura list`                        | List all context packs          |
-| `aura show <pack>`                 | Display a pack's full contents  |
-| `aura add <pack> <key> <value>`    | Add a fact without opening YAML |
-| `aura edit <pack>`                 | Open a pack in `$EDITOR`        |
-| `aura create <name>`               | Create a new empty pack         |
-| `aura create <name> -t <template>` | Create from a built-in template |
-| `aura templates`                   | List all 14 available templates |
-| `aura delete <pack>`               | Delete a pack                   |
-| `aura diff <a> <b>`                | Compare two packs               |
+| Command | What it does |
+|---------|-------------|
+| `aura list` | List all context packs |
+| `aura show <pack>` | Display a pack's contents |
+| `aura add <pack> <key> <value>` | Add a fact without editing YAML |
+| `aura edit <pack>` | Open a pack in `$EDITOR` |
+| `aura create <n>` | Create a new empty pack |
+| `aura create <n> -t <template>` | Create from a built-in template |
+| `aura templates` | List all 14 available templates |
+| `aura delete <pack>` | Delete a pack |
+| `aura diff <a> <b>` | Compare two packs |
 
 ### Templates
 
-14 built-in templates — each includes domain-specific facts and AI interaction
-rules.
+14 built-in templates to get started fast. Each includes facts and AI interaction rules tailored to the profile.
 
-**Stack-specific** — `frontend` · `backend` · `data-scientist` · `mobile` ·
-`devops` · `ai-builder`
+**Stack-specific:** `frontend`, `backend`, `data-scientist`, `mobile`, `devops`, `ai-builder`
 
-**Role-specific** — `founder` · `student` · `marketer` · `designer`
+**Role-specific:** `founder`, `student`, `marketer`, `designer`
 
-**General-purpose** — `developer` · `writer` · `researcher` · `work`
+**General-purpose:** `developer`, `writer`, `researcher`, `work`
 
 ```bash
-aura templates                           # list all templates
-aura create mydev -t frontend            # frontend dev pack
-aura create research -t data-scientist   # data science pack
-aura create study -t student             # student pack
+aura templates                         # list all available templates
+aura create mydev -t frontend          # create a frontend dev pack
+aura create research -t data-scientist # create a data science pack
+aura create study -t student           # create a student pack
 ```
 
-Every template is a starting point. Edit the generated YAML to match your actual
-setup.
+Every template is a starting point. Edit the generated YAML to match your actual stack and preferences.
 
 ### Health & maintenance
 
-| Command            | What it does                                                |
-| ------------------ | ----------------------------------------------------------- |
-| `aura doctor`      | Check pack health — bloat, stale facts, duplicates, secrets |
-| `aura audit`       | Scan packs for leaked API keys, tokens, credentials         |
-| `aura audit --fix` | Auto-redact critical secrets                                |
-| `aura consolidate` | Merge duplicate facts, resolve contradictions across packs  |
-| `aura decay`       | Remove expired facts based on type-aware TTL                |
+| Command | What it does |
+|---------|-------------|
+| `aura doctor` | Check pack health — bloat, stale facts, duplicates, secrets |
+| `aura audit` | Scan packs for leaked API keys, tokens, credentials |
+| `aura audit --fix` | Auto-redact critical secrets |
+| `aura consolidate` | Merge duplicate facts, find contradictions across packs |
+| `aura decay` | Remove expired facts based on type-aware TTL |
 
 ### Import & export
 
-| Command                               | What it does                                       |
-| ------------------------------------- | -------------------------------------------------- |
-| `aura import -s chatgpt <file>`       | Import from a ChatGPT data export                  |
-| `aura import -s claude <file>`        | Import from a Claude conversation export           |
-| `aura extract <file>`                 | Extract facts from conversations using a local LLM |
-| `aura export <pack> -f system-prompt` | Universal LLM system prompt                        |
-| `aura export <pack> -f cursorrules`   | `.cursorrules` file for Cursor                     |
-| `aura export <pack> -f chatgpt`       | ChatGPT custom instructions                        |
-| `aura export <pack> -f claude`        | Claude memory statements                           |
-
----
+| Command | What it does |
+|---------|-------------|
+| `aura import -s chatgpt <file>` | Import from a ChatGPT data export |
+| `aura import -s claude <file>` | Import from a Claude data export |
+| `aura extract <file>` | Extract facts from conversations using a local LLM |
+| `aura export <pack> -f system-prompt` | Universal LLM system prompt |
+| `aura export <pack> -f cursorrules` | `.cursorrules` file |
+| `aura export <pack> -f chatgpt` | ChatGPT custom instructions |
+| `aura export <pack> -f claude` | Claude memory statements |
 
 ## Security
 
-aura was built privacy-first from the ground up. Your context never leaves your
-machine.
+aura is local-first. Your context never leaves your machine.
 
 ```bash
-aura serve                               # localhost only, no auth
+aura serve                              # localhost only, open
 aura serve --token my-secret            # require Bearer token
 aura serve --packs developer,writer     # expose only specific packs
-aura serve --read-only                  # prevent writes via MCP
-aura serve --watch                      # hot-reload on changes
+aura serve --read-only                  # block all writes via MCP
+aura serve --watch                      # auto-reload on pack changes
 ```
 
-**Secret detection** — `aura audit` scans every fact and rule for leaked
-credentials before they reach an LLM. Catches 30+ patterns: AWS keys, GitHub
-tokens, OpenAI/Anthropic API keys, Slack tokens, database URLs, private keys,
-and more. The MCP server scrubs critical secrets automatically at serve time,
-even if you skip the audit.
+**Secret detection** — `aura audit` scans every fact and rule for leaked credentials before they reach an LLM. Catches 30+ patterns: AWS keys, GitHub tokens, OpenAI/Anthropic API keys, Slack tokens, database URLs, private keys, Bearer tokens, and more. The MCP server scrubs critical secrets automatically at serve time — even if you forget to audit.
 
-| Control           | What it does                                                |
-| ----------------- | ----------------------------------------------------------- |
-| Localhost binding | Binds to `127.0.0.1` only — not reachable from the network  |
-| Bearer token auth | Optional `--token` flag or `AURA_TOKEN` env var             |
-| Scoped serving    | Choose which packs each tool can access                     |
-| Read-only mode    | AI tools read your context — they can never write to it     |
-| No telemetry      | No analytics, no crash reports, no usage tracking. Nothing. |
-
----
+- Binds to `127.0.0.1` only — not reachable from the network
+- Optional Bearer token auth (`--token` or `AURA_TOKEN` env var)
+- Scoped serving — control which packs each tool sees
+- Read-only mode — AI reads your context, never writes to it
+- **No telemetry. No analytics. No cloud. No tracking.**
 
 ## Architecture
-
-aura is a lean Python CLI with no heavy dependencies. No database. No Docker. No
-daemon.
 
 ```
 aura/
 ├── cli.py           # 22 commands (Typer + Rich)
 ├── schema.py        # ContextPack, Fact, Rule (Pydantic)
 ├── mcp_server.py    # FastAPI MCP server (HTTP + SSE)
-├── scanner.py       # Machine scanner with incremental SHA-256 hashing
+├── scanner.py       # Machine scanner with incremental hashing
 ├── onboard.py       # Interactive onboarding
-├── pack.py          # Pack CRUD + template engine
+├── pack.py          # Pack CRUD + templates
 ├── audit.py         # Secret detection engine (30+ patterns)
-├── scan_cache.py    # Content hashing for fast re-scans
+├── scan_cache.py    # SHA-256 content hashing for fast re-scans
 ├── watcher.py       # File watcher for hot-reload
 ├── doctor.py        # Pack health checker
 ├── consolidate.py   # Dedup + contradiction detection
-├── extractor.py     # LLM-based fact extraction (Ollama / OpenAI)
-├── diff.py          # Pack diffing
-├── setup.py         # Auto-config for Claude Desktop, Cursor, Gemini CLI
+├── extractor.py     # LLM-based extraction (Ollama / OpenAI)
+├── diff.py          # Pack comparison
+├── setup.py         # Auto-config for Claude, Cursor, Gemini
 ├── exporters/       # system-prompt, cursorrules, chatgpt, claude
 └── importers/       # ChatGPT + Claude data importers
 ```
 
 7,800+ lines of Python · 151 tests · 22 commands · 14 templates · MIT license
 
----
-
 ## Roadmap
 
 ### Shipped
 
 - [x] Machine scanner — languages, frameworks, tools, projects, git identity
-- [x] Context packs — typed facts, confidence levels, sources
-- [x] MCP server — resources, tools, prompt templates (HTTP + SSE)
-- [x] Auto-config for Claude Desktop, Cursor, Gemini CLI, ChatGPT Desktop
+- [x] Context packs with typed facts, confidence levels, sources
+- [x] MCP server — resources, tools, prompt templates
+- [x] Auto-config for Claude Desktop, Cursor, Gemini CLI
+- [x] ChatGPT Desktop support via SSE
 - [x] Token auth, scoped serving, read-only mode
 - [x] Import from ChatGPT + Claude data exports
-- [x] LLM-based fact extraction (Ollama, OpenAI)
+- [x] LLM-based extraction (Ollama, OpenAI)
 - [x] Pack health checker + consolidation engine
 - [x] Memory decay with type-aware TTL
-- [x] Secret detection and auto-redaction (30+ patterns)
-- [x] Incremental scan with SHA-256 content hashing
+- [x] Secret detection and auto-redaction
+- [x] Incremental scan with content hashing
 - [x] File watcher (`aura serve --watch`)
 - [x] Three-level token delivery
-- [x] 14 built-in templates
+- [x] 14 built-in templates (frontend, backend, data-scientist, mobile, devops, founder, student, marketer, designer, ai-builder)
 
 ### Next
 
@@ -409,10 +408,8 @@ aura/
 - [ ] Per-agent permissions
 - [ ] Share via GitHub Gist
 - [ ] GraphRAG local knowledge graph
-- [ ] Cloud sync (opt-in, end-to-end encrypted)
+- [ ] Cloud sync (opt-in, encrypted)
 - [ ] Team sharing
-
----
 
 ## Contributing
 
@@ -425,18 +422,13 @@ pytest
 
 **Good first issues:**
 
-- **New export format** — add Windsurf, Continue.dev, or AGENTS.md support
-  ([guide](CONTRIBUTING.md#adding-an-exporter))
+- **New export format** — add Windsurf, Continue.dev, or AGENTS.md support ([guide](CONTRIBUTING.md#adding-an-exporter))
 - **New importer** — Gemini history export parsing
-- **Pack templates** — create domain-specific starter packs
-- **JSON Schema** — publish `context-pack.schema.json` to formalize the pack
-  format
-- **Translations** — translate this README to French, Spanish, Portuguese, or
-  Chinese
+- **Pack templates** — create domain-specific starter packs (frontend, data-scientist, devops, writer)
+- **JSON Schema** — publish `context-pack.schema.json` to formalize the pack format
+- **Translations** — translate this README to French, Spanish, Portuguese, or Chinese
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide.
-
----
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ## License
 
