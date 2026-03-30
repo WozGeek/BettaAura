@@ -6,15 +6,20 @@ so they automatically read your context packs via MCP.
 
 Supported tools:
   - Claude Desktop (macOS + Windows + Linux)
+  - Claude Code CLI
   - ChatGPT Desktop (macOS + Windows)
   - Cursor IDE
+  - Windsurf IDE
+  - VS Code (with Copilot MCP)
   - Gemini CLI
+  - Codex CLI
 """
 
 from __future__ import annotations
 
 import json
 import platform
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -36,8 +41,6 @@ def _get_claude_config_path() -> Optional[Path]:
 
 def _get_chatgpt_config_path() -> Optional[Path]:
     """Get ChatGPT Desktop config path (Developer Mode MCP)."""
-    # ChatGPT Desktop uses Developer Mode for MCP — no local config file.
-    # We return a sentinel path to indicate it's available but needs manual setup.
     return None
 
 
@@ -46,9 +49,36 @@ def _get_cursor_config_path() -> Optional[Path]:
     return Path.home() / ".cursor" / "mcp.json"
 
 
+def _get_windsurf_config_path() -> Optional[Path]:
+    """Get Windsurf MCP config path."""
+    return Path.home() / ".windsurf" / "mcp.json"
+
+
+def _get_vscode_config_path() -> Optional[Path]:
+    """Get VS Code MCP config path (for Copilot MCP support)."""
+    system = platform.system()
+    if system == "Darwin":
+        return Path.home() / "Library" / "Application Support" / "Code" / "User" / "settings.json"
+    elif system == "Windows":
+        return Path.home() / "AppData" / "Roaming" / "Code" / "User" / "settings.json"
+    elif system == "Linux":
+        return Path.home() / ".config" / "Code" / "User" / "settings.json"
+    return None
+
+
+def _get_claude_code_config_path() -> Optional[Path]:
+    """Get Claude Code MCP config path."""
+    return Path.home() / ".claude" / "mcp.json"
+
+
 def _get_gemini_config_path() -> Optional[Path]:
     """Get Gemini CLI settings path."""
     return Path.home() / ".gemini" / "settings.json"
+
+
+def _get_codex_config_path() -> Optional[Path]:
+    """Get Codex CLI MCP config path."""
+    return Path.home() / ".codex" / "mcp.json"
 
 
 # ---------------------------------------------------------------------------
@@ -69,22 +99,23 @@ def _aura_mcp_config_sse(host: str = "localhost", port: int = 3847) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool configurators
+# Generic JSON config writer
 # ---------------------------------------------------------------------------
-def setup_claude_desktop(host: str = "localhost", port: int = 3847) -> dict:
-    """
-    Configure Claude Desktop to connect to aura MCP server.
-
-    Returns:
-        dict with keys: success, path, action, message
-    """
-    config_path = _get_claude_config_path()
+def _setup_json_mcp_tool(
+    tool_name: str,
+    config_path: Optional[Path],
+    mcp_config: dict,
+    host: str = "localhost",
+    port: int = 3847,
+    servers_key: str = "mcpServers",
+) -> dict:
+    """Generic setup for tools that store MCP config as JSON with mcpServers."""
     if config_path is None:
-        return {"success": False, "path": None, "action": "skip", "message": "Unsupported OS"}
+        return {"success": False, "path": None, "action": "skip",
+                "message": f"No config path found for {tool_name}"}
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Load existing config or create new
     if config_path.exists():
         try:
             with open(config_path) as f:
@@ -94,19 +125,17 @@ def setup_claude_desktop(host: str = "localhost", port: int = 3847) -> dict:
     else:
         config = {}
 
-    # Check if aura is already configured
-    mcp_servers = config.get("mcpServers", {})
+    mcp_servers = config.get(servers_key, {})
     if "aura" in mcp_servers:
         return {
             "success": True,
             "path": str(config_path),
             "action": "already_configured",
-            "message": "aura is already configured in Claude Desktop",
+            "message": f"aura is already configured in {tool_name}",
         }
 
-    # Add aura
-    mcp_servers["aura"] = _aura_mcp_config(host, port)
-    config["mcpServers"] = mcp_servers
+    mcp_servers["aura"] = mcp_config
+    config[servers_key] = mcp_servers
 
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
@@ -115,15 +144,43 @@ def setup_claude_desktop(host: str = "localhost", port: int = 3847) -> dict:
         "success": True,
         "path": str(config_path),
         "action": "configured",
-        "message": "Added aura MCP server to Claude Desktop config",
+        "message": f"Added aura MCP server to {tool_name} config",
     }
+
+
+# ---------------------------------------------------------------------------
+# Tool configurators
+# ---------------------------------------------------------------------------
+def setup_claude_desktop(host: str = "localhost", port: int = 3847) -> dict:
+    """Configure Claude Desktop to connect to aura MCP server."""
+    return _setup_json_mcp_tool(
+        "Claude Desktop", _get_claude_config_path(),
+        _aura_mcp_config(host, port), host, port,
+    )
 
 
 def setup_cursor(host: str = "localhost", port: int = 3847) -> dict:
     """Configure Cursor IDE to connect to aura MCP server."""
-    config_path = _get_cursor_config_path()
+    return _setup_json_mcp_tool(
+        "Cursor", _get_cursor_config_path(),
+        _aura_mcp_config(host, port), host, port,
+    )
+
+
+def setup_windsurf(host: str = "localhost", port: int = 3847) -> dict:
+    """Configure Windsurf IDE to connect to aura MCP server."""
+    return _setup_json_mcp_tool(
+        "Windsurf", _get_windsurf_config_path(),
+        _aura_mcp_config(host, port), host, port,
+    )
+
+
+def setup_vscode(host: str = "localhost", port: int = 3847) -> dict:
+    """Configure VS Code (Copilot MCP) to connect to aura MCP server."""
+    config_path = _get_vscode_config_path()
     if config_path is None:
-        return {"success": False, "path": None, "action": "skip", "message": "Unsupported OS"}
+        return {"success": False, "path": None, "action": "skip",
+                "message": "No VS Code config path found"}
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -136,17 +193,24 @@ def setup_cursor(host: str = "localhost", port: int = 3847) -> dict:
     else:
         config = {}
 
-    mcp_servers = config.get("mcpServers", {})
-    if "aura" in mcp_servers:
+    # VS Code uses "mcp" → "servers" structure for Copilot MCP
+    mcp = config.get("mcp", {})
+    servers = mcp.get("servers", {})
+
+    if "aura" in servers:
         return {
             "success": True,
             "path": str(config_path),
             "action": "already_configured",
-            "message": "aura is already configured in Cursor",
+            "message": "aura is already configured in VS Code",
         }
 
-    mcp_servers["aura"] = _aura_mcp_config(host, port)
-    config["mcpServers"] = mcp_servers
+    servers["aura"] = {
+        "type": "http",
+        "url": f"http://{host}:{port}/mcp",
+    }
+    mcp["servers"] = servers
+    config["mcp"] = mcp
 
     with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
@@ -155,53 +219,42 @@ def setup_cursor(host: str = "localhost", port: int = 3847) -> dict:
         "success": True,
         "path": str(config_path),
         "action": "configured",
-        "message": "Added aura MCP server to Cursor config",
+        "message": "Added aura MCP server to VS Code (Copilot MCP)",
     }
+
+
+def setup_claude_code(host: str = "localhost", port: int = 3847) -> dict:
+    """Configure Claude Code CLI to connect to aura MCP server."""
+    return _setup_json_mcp_tool(
+        "Claude Code", _get_claude_code_config_path(),
+        _aura_mcp_config(host, port), host, port,
+    )
 
 
 def setup_gemini(host: str = "localhost", port: int = 3847) -> dict:
     """Configure Gemini CLI to connect to aura MCP server."""
     config_path = _get_gemini_config_path()
     if config_path is None:
-        return {"success": False, "path": None, "action": "skip", "message": "Unsupported OS"}
+        return {"success": False, "path": None, "action": "skip",
+                "message": "No Gemini CLI config path found"}
 
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if config_path.exists():
-        try:
-            with open(config_path) as f:
-                config = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            config = {}
-    else:
-        config = {}
-
-    mcp_servers = config.get("mcpServers", {})
-    if "aura" in mcp_servers:
-        return {
-            "success": True,
-            "path": str(config_path),
-            "action": "already_configured",
-            "message": "aura is already configured in Gemini CLI",
-        }
-
-    # Gemini CLI uses SSE transport
-    mcp_servers["aura"] = {
-        "url": f"http://{host}:{port}/sse"
-    }
-    config["mcpServers"] = mcp_servers
-
-    with open(config_path, "w") as f:
-        json.dump(config, f, indent=2)
-
-    return {
-        "success": True,
-        "path": str(config_path),
-        "action": "configured",
-        "message": "Added aura MCP server to Gemini CLI config",
-    }
+    return _setup_json_mcp_tool(
+        "Gemini CLI", config_path,
+        {"url": f"http://{host}:{port}/sse"}, host, port,
+    )
 
 
+def setup_codex(host: str = "localhost", port: int = 3847) -> dict:
+    """Configure Codex CLI to connect to aura MCP server."""
+    return _setup_json_mcp_tool(
+        "Codex", _get_codex_config_path(),
+        _aura_mcp_config(host, port), host, port,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Detection
+# ---------------------------------------------------------------------------
 def detect_installed_tools() -> list[dict]:
     """Detect which AI tools are installed on this machine."""
     tools = []
@@ -220,7 +273,19 @@ def detect_installed_tools() -> list[dict]:
             "installed": claude_installed,
             "config_path": str(claude_path),
             "config_exists": claude_path.exists(),
+            "setup_fn": "setup_claude_desktop",
         })
+
+    # Claude Code CLI
+    claude_code_installed = shutil.which("claude") is not None
+    claude_code_path = _get_claude_code_config_path()
+    tools.append({
+        "name": "Claude Code",
+        "installed": claude_code_installed,
+        "config_path": str(claude_code_path) if claude_code_path else None,
+        "config_exists": claude_code_path.exists() if claude_code_path else False,
+        "setup_fn": "setup_claude_code",
+    })
 
     # Cursor
     cursor_path = _get_cursor_config_path()
@@ -235,6 +300,39 @@ def detect_installed_tools() -> list[dict]:
             "installed": cursor_installed,
             "config_path": str(cursor_path),
             "config_exists": cursor_path.exists(),
+            "setup_fn": "setup_cursor",
+        })
+
+    # Windsurf
+    windsurf_path = _get_windsurf_config_path()
+    if windsurf_path:
+        windsurf_installed = False
+        if system == "Darwin":
+            windsurf_installed = Path("/Applications/Windsurf.app").exists()
+        else:
+            windsurf_installed = windsurf_path.parent.exists()
+        tools.append({
+            "name": "Windsurf",
+            "installed": windsurf_installed,
+            "config_path": str(windsurf_path),
+            "config_exists": windsurf_path.exists(),
+            "setup_fn": "setup_windsurf",
+        })
+
+    # VS Code
+    vscode_path = _get_vscode_config_path()
+    if vscode_path:
+        vscode_installed = False
+        if system == "Darwin":
+            vscode_installed = Path("/Applications/Visual Studio Code.app").exists()
+        else:
+            vscode_installed = shutil.which("code") is not None
+        tools.append({
+            "name": "VS Code",
+            "installed": vscode_installed,
+            "config_path": str(vscode_path),
+            "config_exists": vscode_path.exists(),
+            "setup_fn": "setup_vscode",
         })
 
     # ChatGPT Desktop
@@ -248,13 +346,13 @@ def detect_installed_tools() -> list[dict]:
     tools.append({
         "name": "ChatGPT Desktop",
         "installed": chatgpt_installed,
-        "config_path": None,  # Uses Developer Mode, no local config
+        "config_path": None,
         "config_exists": False,
         "manual_setup": True,
+        "setup_fn": None,
     })
 
     # Gemini CLI
-    import shutil
     gemini_installed = shutil.which("gemini") is not None
     gemini_path = _get_gemini_config_path()
     tools.append({
@@ -262,6 +360,18 @@ def detect_installed_tools() -> list[dict]:
         "installed": gemini_installed,
         "config_path": str(gemini_path) if gemini_path else None,
         "config_exists": gemini_path.exists() if gemini_path else False,
+        "setup_fn": "setup_gemini",
+    })
+
+    # Codex CLI
+    codex_installed = shutil.which("codex") is not None
+    codex_path = _get_codex_config_path()
+    tools.append({
+        "name": "Codex",
+        "installed": codex_installed,
+        "config_path": str(codex_path) if codex_path else None,
+        "config_exists": codex_path.exists() if codex_path else False,
+        "setup_fn": "setup_codex",
     })
 
     return tools

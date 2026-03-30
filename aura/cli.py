@@ -46,6 +46,8 @@ class ExportFormat(str, Enum):
     CURSORRULES = "cursorrules"
     CLAUDE_MEMORY = "claude-memory"
     CHATGPT_INSTRUCTIONS = "chatgpt-instructions"
+    CLAUDE_MD = "claude-md"
+    AGENTS_MD = "agents-md"
 
 
 class ImportSource(str, Enum):
@@ -190,12 +192,24 @@ def show(
         border_style="cyan",
     ))
 
+    # Freshness summary
+    from aura.freshness import fact_freshness, fact_freshness_color, pack_freshness
+    p_score = pack_freshness(pack)
+    score_color = {"green": p_score >= 80, "yellow": 50 <= p_score < 80, "red": p_score < 50}
+    sc = "green" if p_score >= 80 else ("yellow" if p_score >= 50 else "red")
+    rprint(f"\n  Freshness: [{sc}]{p_score}/100[/{sc}]")
+
     if pack.facts:
         rprint("\n[bold]Facts:[/bold]")
+        pack_updated = None
+        if pack.meta.updated_at:
+            pack_updated = pack.meta.updated_at.isoformat() if hasattr(pack.meta.updated_at, 'isoformat') else str(pack.meta.updated_at)
         for fact in pack.facts:
             val = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
             conf_color = {"high": "green", "medium": "yellow", "low": "red"}.get(fact.confidence.value, "dim")
-            rprint(f"  [{conf_color}]●[/{conf_color}] [bold]{fact.key}[/bold]: {val}")
+            f_score = fact_freshness(fact, pack_updated)
+            f_color = fact_freshness_color(f_score)
+            rprint(f"  [{conf_color}]●[/{conf_color}] [bold]{fact.key}[/bold]: {val}  [{f_color}]({f_score}%)[/{f_color}]")
 
     if pack.rules:
         rprint("\n[bold]Rules:[/bold]")
@@ -264,6 +278,14 @@ def export(
     elif format == ExportFormat.CHATGPT_INSTRUCTIONS:
         from aura.exporters.chatgpt_instructions import export_chatgpt_instructions_text
         content = export_chatgpt_instructions_text(packs)
+
+    elif format == ExportFormat.CLAUDE_MD:
+        from aura.exporters.claude_code import export_claude_md
+        content = export_claude_md(packs)
+
+    elif format == ExportFormat.AGENTS_MD:
+        from aura.exporters.claude_code import export_agents_md
+        content = export_agents_md(packs)
 
     # Output
     if output:
@@ -561,14 +583,27 @@ def setup(
     host: str = typer.Option("localhost", "--host", "-h", help="MCP server host"),
     port: int = typer.Option(3847, "--port", "-p", help="MCP server port"),
 ):
-    """Auto-configure Claude Desktop, ChatGPT, Cursor, and Gemini CLI to connect to aura's MCP server."""
-    from aura.setup import detect_installed_tools, setup_claude_desktop, setup_cursor, setup_gemini
+    """Auto-configure all detected AI tools to connect to aura's MCP server."""
+    from aura.setup import (
+        detect_installed_tools, setup_claude_code, setup_claude_desktop,
+        setup_codex, setup_cursor, setup_gemini, setup_vscode, setup_windsurf,
+    )
 
     rprint(Panel.fit(
         "[bold]✦ aura setup[/bold]\n\n"
         "  Detecting installed AI tools and configuring MCP...",
         border_style="cyan",
     ))
+
+    SETUP_FNS = {
+        "Claude Desktop": setup_claude_desktop,
+        "Claude Code": setup_claude_code,
+        "Cursor": setup_cursor,
+        "Windsurf": setup_windsurf,
+        "VS Code": setup_vscode,
+        "Gemini CLI": setup_gemini,
+        "Codex": setup_codex,
+    }
 
     tools = detect_installed_tools()
 
@@ -584,21 +619,20 @@ def setup(
             rprint(f"  [dim]○ {name} — not installed[/dim]")
             continue
 
-        # Configure based on tool
-        if name == "Claude Desktop":
-            result = setup_claude_desktop(host, port)
-        elif name == "Cursor":
-            result = setup_cursor(host, port)
-        elif name == "Gemini CLI":
-            result = setup_gemini(host, port)
-        elif name == "ChatGPT Desktop":
+        # ChatGPT Desktop requires manual config
+        if tool.get("manual_setup"):
             rprint(f"  [green]✦ {name}[/green] — detected")
             rprint("    [dim]Open Settings → Connectors → Advanced → Developer Mode[/dim]")
             rprint(f"    [dim]SSE URL: http://{host}:{port}/sse[/dim]")
             configured += 1
             continue
-        else:
+
+        # Auto-configure
+        setup_fn = SETUP_FNS.get(name)
+        if not setup_fn:
             continue
+
+        result = setup_fn(host, port)
 
         if result["action"] == "configured":
             rprint(f"  [green]✦ {name}[/green] — configured")
@@ -615,10 +649,17 @@ def setup(
         rprint("\n  [bold]Next steps:[/bold]")
         rprint("  1. Start the MCP server:  [cyan]aura serve[/cyan]")
         rprint("  2. Restart your AI tools to pick up the new config")
-        rprint("  3. Your context packs are now available automatically")
     else:
         rprint("\n[yellow]No tools configured.[/yellow]")
-        rprint("  Install Claude Desktop, ChatGPT, Cursor, or Gemini CLI, then run [bold]aura setup[/bold] again.")
+
+
+@app.command()
+def install(
+    host: str = typer.Option("localhost", "--host", "-h", help="MCP server host"),
+    port: int = typer.Option(3847, "--port", "-p", help="MCP server port"),
+):
+    """Alias for 'aura setup' — auto-configure all AI tools."""
+    setup(host=host, port=port)
 
 
 @app.command()

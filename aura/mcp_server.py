@@ -151,6 +151,15 @@ def _compact_profile(packs: list, max_facts: int | None = None) -> str:
     if not lines:
         return "No user context available."
 
+    # Add freshness summary
+    try:
+        from aura.freshness import pack_freshness
+        scores = [pack_freshness(p) for p in packs]
+        avg = int(sum(scores) / len(scores)) if scores else 100
+        lines.append(f"Context freshness: {avg}/100")
+    except ImportError:
+        pass
+
     return "\n".join(lines)
 
 
@@ -640,6 +649,16 @@ async def sse_post_endpoint(request: Request):
 async def health():
     packs = _filter_packs(list_packs())
     auth_enabled = _AUTH_TOKEN is not None
+
+    # Compute freshness scores
+    freshness = {}
+    try:
+        from aura.freshness import pack_freshness
+        for pack in packs:
+            freshness[pack.name] = pack_freshness(pack)
+    except ImportError:
+        pass
+
     return {
         "status": "ok",
         "version": __version__,
@@ -648,6 +667,7 @@ async def health():
         "auth_enabled": auth_enabled,
         "read_only": not _WRITE_ENABLED,
         "scoped": _ALLOWED_PACKS is not None,
+        "freshness": freshness if freshness else None,
     }
 
 
