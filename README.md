@@ -31,13 +31,15 @@ Define who you are — your stack, your style, your rules — **once**, in plain
 ### Highlights
 
 - **30-second setup** — `pip install aura-ctx && aura quickstart` scans your machine, asks 5 questions, starts serving
+- **8 AI tools supported** — Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, ChatGPT, Gemini CLI, Codex
 - **14 templates** — `aura create -t frontend`, `data-scientist`, `founder`, `student`, and 10 more
-- **Cross-tool** — Claude Desktop, ChatGPT Desktop, Cursor, Gemini CLI, any MCP client
 - **Smart token delivery** — 3 levels (~50, ~500, ~1000+ tokens) so AI tools only load what they need
+- **Freshness scoring** — see how current each fact is (0–100), per-fact and per-pack
 - **Secret scanning** — auto-detects leaked API keys before they reach an LLM, redacts on serve
+- **CLAUDE.md / AGENTS.md export** — feed your identity to Claude Code, gstack, Codex, OpenClaw
 - **File watcher** — `aura serve --watch` hot-reloads when you edit a YAML pack
-- **Human-readable** — YAML files in `~/.aura/packs/`, git-friendly, fully editable
-- **No cloud, no telemetry, no tracking** — everything stays on your machine
+- **Self-update** — `aura update` keeps you on the latest version
+- **No cloud, no telemetry, no tracking** — YAML files on your machine, fully editable
 
 ## Why aura
 
@@ -68,7 +70,7 @@ If you've ever pasted your coding style into a system prompt and wished it could
 ## Quick Start
 
 ```bash
-pip install aura-ctx
+pip install -U aura-ctx
 aura quickstart
 ```
 
@@ -149,9 +151,13 @@ Same question. Completely different answer. That's aura.
   MCP Server              localhost:3847
    │
    ├──▶ Claude Desktop    (auto-configured)
-   ├──▶ ChatGPT Desktop   (SSE)
+   ├──▶ Claude Code       (auto-configured)
    ├──▶ Cursor IDE        (auto-configured)
-   └──▶ Gemini CLI        (auto-configured)
+   ├──▶ Windsurf IDE      (auto-configured)
+   ├──▶ VS Code           (auto-configured)
+   ├──▶ ChatGPT Desktop   (SSE, manual)
+   ├──▶ Gemini CLI        (auto-configured)
+   └──▶ Codex CLI         (auto-configured)
 ```
 
 > **What's MCP?** The [Model Context Protocol](https://modelcontextprotocol.io) is an open standard that lets AI tools connect to local data sources. aura uses it so Claude, Cursor, and others can read your context without any custom integration.
@@ -206,13 +212,17 @@ The server instructs AI clients to start with the identity card and drill down o
 | Tool | Setup | Transport |
 |------|-------|-----------|
 | **Claude Desktop** | `aura setup` — auto | Streamable HTTP |
+| **Claude Code** | `aura setup` — auto | Streamable HTTP |
 | **Cursor IDE** | `aura setup` — auto | Streamable HTTP |
+| **Windsurf IDE** | `aura setup` — auto | Streamable HTTP |
+| **VS Code** | `aura setup` — auto | Copilot MCP |
 | **Gemini CLI** | `aura setup` — auto | SSE |
+| **Codex CLI** | `aura setup` — auto | Streamable HTTP |
 | **ChatGPT Desktop** | Developer Mode → add SSE URL | SSE |
 | **Any MCP client** | Point to `localhost:3847` | HTTP or SSE |
 
 ```bash
-aura setup   # writes config for all detected tools
+aura setup   # auto-configures all detected tools (alias: aura install)
 aura serve   # starts MCP server on localhost:3847
 ```
 
@@ -277,9 +287,12 @@ Auto-configured by `aura setup`. Manual config:
 | `aura quickstart` | Full setup: scan → onboard → setup → audit → serve |
 | `aura scan` | Auto-detect your stack from tools, repos, and config files |
 | `aura onboard` | 5 questions to generate your context packs |
-| `aura setup` | Auto-configure Claude Desktop, Cursor, Gemini |
+| `aura setup` | Auto-configure all detected AI tools (8 supported) |
+| `aura install` | Alias for `aura setup` |
 | `aura serve` | Start the MCP server |
 | `aura serve --watch` | Start with hot-reload on YAML changes |
+| `aura update` | Update aura to the latest PyPI version |
+| `aura version` | Show current version + check for updates |
 
 ### Managing packs
 
@@ -335,6 +348,10 @@ Every template is a starting point. Edit the generated YAML to match your actual
 | `aura export <pack> -f cursorrules` | `.cursorrules` file |
 | `aura export <pack> -f chatgpt` | ChatGPT custom instructions |
 | `aura export <pack> -f claude` | Claude memory statements |
+| `aura export <pack> -f claude-md` | CLAUDE.md section (Claude Code, gstack) |
+| `aura export <pack> -f agents-md` | AGENTS.md section (Codex, OpenClaw) |
+| `aura export <pack> -f claude-md` | CLAUDE.md section (Claude Code, gstack) |
+| `aura export <pack> -f agents-md` | AGENTS.md section (Codex, OpenClaw) |
 
 ## Security
 
@@ -360,25 +377,27 @@ aura serve --watch                      # auto-reload on pack changes
 
 ```
 aura/
-├── cli.py           # 22 commands (Typer + Rich)
+├── cli.py           # 24 commands (Typer + Rich)
 ├── schema.py        # ContextPack, Fact, Rule (Pydantic)
 ├── mcp_server.py    # FastAPI MCP server (HTTP + SSE)
 ├── scanner.py       # Machine scanner with incremental hashing
 ├── onboard.py       # Interactive onboarding
 ├── pack.py          # Pack CRUD + templates
 ├── audit.py         # Secret detection engine (30+ patterns)
+├── freshness.py     # Staleness scoring (0–100 per fact)
+├── version_check.py # PyPI update checker with daily cache
 ├── scan_cache.py    # SHA-256 content hashing for fast re-scans
 ├── watcher.py       # File watcher for hot-reload
 ├── doctor.py        # Pack health checker
 ├── consolidate.py   # Dedup + contradiction detection
 ├── extractor.py     # LLM-based extraction (Ollama / OpenAI)
 ├── diff.py          # Pack comparison
-├── setup.py         # Auto-config for Claude, Cursor, Gemini
-├── exporters/       # system-prompt, cursorrules, chatgpt, claude
+├── setup.py         # Auto-config for 8 AI tools
+├── exporters/       # system-prompt, cursorrules, chatgpt, claude, claude-md, agents-md
 └── importers/       # ChatGPT + Claude data importers
 ```
 
-7,800+ lines of Python · 151 tests · 22 commands · 14 templates · MIT license
+8,500+ lines of Python · 151 tests · 24 commands · 14 templates · MIT license
 
 ## Roadmap
 
@@ -387,8 +406,7 @@ aura/
 - [x] Machine scanner — languages, frameworks, tools, projects, git identity
 - [x] Context packs with typed facts, confidence levels, sources
 - [x] MCP server — resources, tools, prompt templates
-- [x] Auto-config for Claude Desktop, Cursor, Gemini CLI
-- [x] ChatGPT Desktop support via SSE
+- [x] Auto-config for 8 AI tools (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Codex, ChatGPT)
 - [x] Token auth, scoped serving, read-only mode
 - [x] Import from ChatGPT + Claude data exports
 - [x] LLM-based extraction (Ollama, OpenAI)
@@ -398,17 +416,19 @@ aura/
 - [x] Incremental scan with content hashing
 - [x] File watcher (`aura serve --watch`)
 - [x] Three-level token delivery
-- [x] 14 built-in templates (frontend, backend, data-scientist, mobile, devops, founder, student, marketer, designer, ai-builder)
+- [x] 14 built-in templates
+- [x] CLAUDE.md / AGENTS.md exporters (Claude Code, gstack, Codex, OpenClaw)
+- [x] Freshness scoring — per-fact and per-pack (0–100)
+- [x] Self-update (`aura update`) with daily version check
 
 ### Next
 
-- [ ] TypeScript / npm package — `npx aura-ctx`
 - [ ] JSON Schema spec for context packs
 - [ ] Usage-based fact priority
 - [ ] Per-agent permissions
+- [ ] Chrome extension — capture context from browser AI conversations
 - [ ] Share via GitHub Gist
-- [ ] GraphRAG local knowledge graph
-- [ ] Cloud sync (opt-in, encrypted)
+- [ ] Cloud sync (opt-in, end-to-end encrypted)
 - [ ] Team sharing
 
 ## Contributing
@@ -422,9 +442,9 @@ pytest
 
 **Good first issues:**
 
-- **New export format** — add Windsurf, Continue.dev, or AGENTS.md support ([guide](CONTRIBUTING.md#adding-an-exporter))
+- **New export format** — add Windsurf or Continue.dev support ([guide](CONTRIBUTING.md#adding-an-exporter))
 - **New importer** — Gemini history export parsing
-- **Pack templates** — create domain-specific starter packs (frontend, data-scientist, devops, writer)
+- **Pack templates** — create domain-specific starter packs
 - **JSON Schema** — publish `context-pack.schema.json` to formalize the pack format
 - **Translations** — translate this README to French, Spanish, Portuguese, or Chinese
 

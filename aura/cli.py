@@ -39,6 +39,29 @@ console = Console()
 
 
 # ---------------------------------------------------------------------------
+# Startup version check — runs before every command (silent, non-blocking)
+# ---------------------------------------------------------------------------
+_SKIP_UPDATE_CHECK = {"version", "update", "serve"}
+
+
+@app.callback(invoke_without_command=True)
+def _main_callback(ctx: typer.Context):
+    """Main callback — checks for updates before each command."""
+    if ctx.invoked_subcommand in _SKIP_UPDATE_CHECK:
+        return
+    if ctx.invoked_subcommand is None:
+        return
+    try:
+        from aura.version_check import check_for_update
+        msg = check_for_update()
+        if msg:
+            rprint(msg)
+            rprint()
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
 # Enums for CLI options
 # ---------------------------------------------------------------------------
 class ExportFormat(str, Enum):
@@ -1053,6 +1076,38 @@ def audit(
 def version():
     """Show aura version."""
     rprint(f"[bold]aura[/bold] v{__version__}")
+    try:
+        from aura.version_check import check_for_update
+        msg = check_for_update()
+        if msg:
+            rprint(msg)
+    except Exception:
+        pass
+
+
+@app.command()
+def update():
+    """Update aura to the latest version."""
+    from aura.version_check import get_latest_version, run_update
+
+    rprint(f"[bold]✦ aura update[/bold]\n")
+    rprint(f"  Current version: [bold]{__version__}[/bold]")
+
+    latest = get_latest_version()
+    if latest:
+        rprint(f"  Latest on PyPI:  [bold]{latest}[/bold]")
+    rprint()
+
+    rprint("[dim]  Running pip install --upgrade aura-ctx...[/dim]\n")
+    exit_code = run_update()
+
+    if exit_code == 0:
+        rprint("\n[green]✦ aura updated successfully.[/green]")
+        rprint("  Restart your terminal to use the new version.")
+    else:
+        rprint("\n[red]✗ Update failed.[/red]")
+        rprint("  Try manually: [bold]pip install --upgrade aura-ctx[/bold]")
+    raise typer.Exit(exit_code)
 
 
 # ---------------------------------------------------------------------------
