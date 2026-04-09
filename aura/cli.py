@@ -1072,6 +1072,53 @@ def audit(
         rprint(format_audit_report(report))
 
 
+
+@app.command()
+def schema(
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Write schema to a file"),
+):
+    """Show or export the JSON Schema spec for context packs."""
+    from aura.schema_export import schema_to_json, write_schema_file
+
+    if output:
+        path = write_schema_file(output)
+        rprint(f"[green]✦ Schema written to:[/green] {path}")
+    else:
+        from rich.syntax import Syntax
+        json_text = schema_to_json()
+        console.print(Syntax(json_text, "json", theme="monokai", line_numbers=False))
+
+
+@app.command()
+def validate(
+    pack_name: str = typer.Argument(..., help="Pack name to validate"),
+):
+    """Validate a context pack against the official JSON Schema."""
+    from aura.pack import get_packs_dir
+    from aura.schema_export import validate_pack_data
+    from ruamel.yaml import YAML as _YAML
+
+    _yaml = _YAML()
+    pack_path = get_packs_dir() / f"{pack_name}.yaml"
+
+    if not pack_path.exists():
+        rprint(f"[red]✗ Pack '{pack_name}' not found.[/red]")
+        raise typer.Exit(1)
+
+    with open(pack_path) as f:
+        data = _yaml.load(f)
+
+    errors = validate_pack_data(data)
+
+    if not errors:
+        rprint(f"[green]✦ Pack '{pack_name}' is valid.[/green]")
+    else:
+        rprint(f"[red]✗ Pack '{pack_name}' has {len(errors)} schema error(s):[/red]\n")
+        for err in errors:
+            rprint(f"  [red]•[/red] {err}")
+        raise typer.Exit(1)
+
+
 @app.command()
 def version():
     """Show aura version."""

@@ -398,7 +398,6 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
             return [{"type": "text", "text": _compact_profile(packs, max_facts)}]
 
         if max_facts:
-            # Trim facts per pack — keep highest confidence first
             for pack in packs:
                 sorted_facts = sorted(
                     pack.facts,

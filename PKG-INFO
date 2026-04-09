@@ -1,3 +1,39 @@
+Metadata-Version: 2.4
+Name: aura-ctx
+Version: 0.3.3
+Summary: Your portable AI context. Carry your identity across every AI tool.
+Project-URL: Homepage, https://github.com/WozGeek/aura-ctx
+Project-URL: Documentation, https://wozgeek.github.io/aura-ctx
+Project-URL: Repository, https://github.com/WozGeek/aura-ctx
+Project-URL: Issues, https://github.com/WozGeek/aura-ctx/issues
+Author-email: "Nok (Enoch Afanwoubo)" <enochafanbo@outlook.com>
+License-Expression: MIT
+License-File: LICENSE
+Keywords: ai,context,llm,mcp,memory,portable
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Software Development :: Libraries
+Requires-Python: >=3.10
+Requires-Dist: pydantic>=2.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: rich>=13.0
+Requires-Dist: ruamel-yaml>=0.18
+Requires-Dist: typer[all]>=0.9.0
+Provides-Extra: dev
+Requires-Dist: pytest-cov>=4.0; extra == 'dev'
+Requires-Dist: pytest>=7.0; extra == 'dev'
+Requires-Dist: ruff>=0.1; extra == 'dev'
+Provides-Extra: extract
+Requires-Dist: openai>=1.0; extra == 'extract'
+Requires-Dist: tiktoken>=0.5; extra == 'extract'
+Provides-Extra: mcp
+Requires-Dist: fastapi>=0.104; extra == 'mcp'
+Requires-Dist: uvicorn>=0.24; extra == 'mcp'
+Description-Content-Type: text/markdown
+
 <p align="center">
   <br />
   <strong><code>✦ aura</code></strong>

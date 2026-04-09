@@ -14,6 +14,7 @@ from typing import Optional
 from ruamel.yaml import YAML
 
 from aura.schema import ContextPack, Fact, PackMeta, Rule
+from aura.schema_export import validate_pack_data
 
 yaml = YAML()
 yaml.default_flow_style = False
@@ -142,6 +143,15 @@ def load_pack(name: str) -> ContextPack:
 
     with open(path) as f:
         data = yaml.load(f)
+
+    # Validate against JSON Schema before parsing
+    errors = validate_pack_data(data)
+    if errors:
+        error_list = "\n  ".join(errors)
+        raise ValueError(
+            f"Pack '{name}' failed schema validation:\n  {error_list}\n"
+            f"Fix the YAML file at: {path}"
+        )
 
     # Parse facts
     facts = []
