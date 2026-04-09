@@ -30,6 +30,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from aura import __version__
 from aura.exporters.system_prompt import export_system_prompt
+from aura.usage import record_pack_access, record_fact_access, sort_facts_by_priority
 from aura.pack import (
     get_packs_dir,
     init_aura,
@@ -90,14 +91,14 @@ def _check_auth(request: Request) -> bool:
     return False
 
 
-def _filter_packs(packs):
+def _filter_packs(packs, agent: str = "unknown"):
     """Filter packs based on allowed list."""
     if _ALLOWED_PACKS is None:
         return packs
     return [p for p in packs if p.name in _ALLOWED_PACKS]
 
 
-def _is_pack_allowed(pack_name: str) -> bool:
+def _is_pack_allowed(pack_name: str, agent: str = "unknown") -> bool:
     """Check if a specific pack is allowed to be served."""
     if _ALLOWED_PACKS is None:
         return True
@@ -369,27 +370,45 @@ PROMPTS = [
 # ---------------------------------------------------------------------------
 # Tool execution
 # ---------------------------------------------------------------------------
+def _get_agent(arguments: dict) -> str:
+    """Extract agent identifier from arguments or fall back to 'unknown'."""
+    return str(arguments.get("agent_id", "unknown"))
+
+
 def execute_tool(name: str, arguments: dict) -> list[dict]:
+    agent = _get_agent(arguments)
+
     if name == "get_identity_card":
-        packs = _filter_packs(list_packs())
+        packs = _filter_packs(list_packs(), agent)
+        for pack in packs:
+            record_pack_access(pack.name, agent)
+            pack.facts = sort_facts_by_priority(pack.facts, pack.name)
         return [{"type": "text", "text": _identity_card(packs)}]
 
     elif name == "get_context":
         pack_name = arguments["pack_name"]
-        if not _is_pack_allowed(pack_name):
+        if not _is_pack_allowed(pack_name, agent):
             return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
         if not pack_exists(pack_name):
             return [{"type": "text", "text": f"Pack '{pack_name}' not found. Use list_packs to see available packs."}]
         pack = load_pack(pack_name)
+        record_pack_access(pack_name, agent)
+        for fact in pack.facts:
+            record_fact_access(pack_name, fact.key, agent)
+        pack.facts = sort_facts_by_priority(pack.facts, pack_name)
         return [{"type": "text", "text": pack.to_system_prompt()}]
 
     elif name == "get_all_context":
-        packs = _filter_packs(list_packs())
+        packs = _filter_packs(list_packs(), agent)
         scopes = arguments.get("scopes", [])
         if scopes:
             packs = [p for p in packs if p.scope in scopes]
         if not packs:
             return [{"type": "text", "text": "No context packs found."}]
+
+        for pack in packs:
+            record_pack_access(pack.name, agent)
+            pack.facts = sort_facts_by_priority(pack.facts, pack.name)
 
         max_facts = arguments.get("max_facts")
         compact = arguments.get("compact", False)
@@ -399,19 +418,15 @@ def execute_tool(name: str, arguments: dict) -> list[dict]:
 
         if max_facts:
             for pack in packs:
-                sorted_facts = sorted(
-                    pack.facts,
-                    key=lambda f: (
-                        0 if f.confidence == Confidence.HIGH else
-                        1 if f.confidence == Confidence.MEDIUM else 2
-                    ),
-                )
-                pack.facts = sorted_facts[:max_facts]
+                pack.facts = pack.facts[:max_facts]
 
         return [{"type": "text", "text": export_system_prompt(packs, include_header=False)}]
 
     elif name == "get_user_profile":
-        packs = _filter_packs(list_packs())
+        packs = _filter_packs(list_packs(), agent)
+        for pack in packs:
+            record_pack_access(pack.name, agent)
+            pack.facts = sort_facts_by_priority(pack.facts, pack.name)
         return [{"type": "text", "text": _compact_profile(packs)}]
 
     elif name == "search_context":

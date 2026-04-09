@@ -453,12 +453,18 @@ def serve(
     packs: Optional[str] = typer.Option(None, "--packs", help="Comma-separated list of packs to serve (default: all)"),
     read_only: bool = typer.Option(False, "--read-only", help="Disable write operations (add_fact, add_rule)"),
     watch: bool = typer.Option(False, "--watch", "-w", help="Auto-reload when pack YAML files change"),
+    no_track: bool = typer.Option(False, "--no-track", help="Disable usage tracking for this session"),
 ):
     """Start the aura MCP server. Serves your context packs to any MCP client."""
     from aura.pack import init_aura
     from aura.pack import list_packs as _list_packs
 
     init_aura()
+
+    # Configure usage tracking
+    if no_track:
+        from aura.usage import set_tracking
+        set_tracking(False)
 
     # Configure security
     from aura.mcp_server import configure_security
@@ -1071,6 +1077,63 @@ def audit(
     else:
         rprint(format_audit_report(report))
 
+
+@app.command()
+def stats(
+    pack: Optional[str] = typer.Option(None, "--pack", help="Filter by pack name"),
+    reset: bool = typer.Option(False, "--reset", help="Reset usage counters"),
+):
+    """Show local MCP usage stats — facts most accessed by AI tools."""
+    from aura.usage import get_stats, reset_stats
+
+    if reset:
+        cleared = reset_stats(pack_filter=pack)
+        target = f"pack '{pack}'" if pack else "all packs"
+        rprint(f"[green]✦ Reset {cleared} usage entries for {target}.[/green]")
+        return
+
+    data = get_stats(pack_filter=pack)
+
+    title = f"aura stats — {pack}" if pack else "aura stats"
+
+    if not data["facts"] and not data["packs"]:
+        rprint(Panel.fit(
+            "[dim]No usage data yet.[/dim]\n\n"
+            "  Start [bold]aura serve[/bold] and use MCP tools to collect data.",
+            title=title,
+            border_style="cyan",
+        ))
+        return
+
+    rprint(Panel.fit(f"[bold]✦ {title}[/bold]", border_style="cyan"))
+
+    if data["packs"]:
+        rprint("\n[bold]Packs[/bold]")
+        tbl = Table(show_header=True, header_style="dim", box=None, padding=(0, 2))
+        tbl.add_column("Pack", style="cyan")
+        tbl.add_column("Calls", justify="right")
+        tbl.add_column("Last accessed", style="dim")
+        tbl.add_column("Agents", style="dim")
+        for p in data["packs"]:
+            agents_str = ", ".join(f"{a}×{c}" for a, c in p["agents"].items()) or "—"
+            last = p["last_called"][:10] if p["last_called"] else "—"
+            tbl.add_row(p["name"], str(p["calls"]), last, agents_str)
+        console.print(tbl)
+
+    if data["facts"]:
+        rprint("\n[bold]Top facts[/bold]")
+        tbl2 = Table(show_header=True, header_style="dim", box=None, padding=(0, 2))
+        tbl2.add_column("Fact key", style="cyan")
+        tbl2.add_column("Pack", style="dim")
+        tbl2.add_column("Calls", justify="right")
+        tbl2.add_column("Last accessed", style="dim")
+        for f in data["facts"][:20]:
+            last = f["last_called"][:10] if f["last_called"] else "—"
+            tbl2.add_row(f["key"], f["pack"], str(f["calls"]), last)
+        console.print(tbl2)
+
+    rprint(f"\n  [dim]Run 'aura stats --reset' to clear counters.[/dim]")
+    rprint(f"  [dim]Disable tracking: add 'track_usage: false' to ~/.aura/config.yaml[/dim]")
 
 
 @app.command()
