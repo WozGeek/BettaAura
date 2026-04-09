@@ -1,0 +1,67 @@
+name: work
+scope: work
+meta:
+  schema_version: 0.1.0
+  description: Professional context — founder, student, manufacturing.
+  tags:
+  - personal
+  - active
+facts:
+- key: identity.name
+  value: Nok (Enoch Afanwoubo)
+  type: identity
+  confidence: high
+  source: manual
+- key: identity.age
+  value: "23"
+  type: identity
+  confidence: high
+  source: manual
+- key: identity.origin
+  value: Togo (based in Minnesota, US)
+  type: identity
+  confidence: high
+  source: manual
+- key: role.founder
+  value: "Solo developer and CS student"
+  type: identity
+  confidence: high
+  source: manual
+- key: role.student
+  value: "CS student at NHCC, transferring to University of Minnesota, target MS Robotics"
+  type: identity
+  confidence: high
+  source: manual
+- key: role.employment
+  value: "Boston Scientific — manufacturing Watchman FLX/FLX Pro cardiac implants"
+  type: identity
+  confidence: high
+  source: manual
+- key: vision.long_term
+  value: "ESSE Group & Co — pan-African conglomerate, 30-year horizon, multigenerational legacy"
+  type: context
+  confidence: high
+  source: manual
+- key: communication.style
+  value: "Direct, data-driven, prefers honest challenge over encouragement"
+  type: style
+  confidence: high
+  source: manual
+- key: current_focus
+  value:
+  - aura (portable AI context — open source)
+  - Academics (Java, Calculus I)
+  type: context
+  confidence: high
+  source: manual
+rules:
+- instruction: Challenge me on project dispersion — I tend to spread across too many ideas
+  priority: 10
+- instruction: Frame suggestions with business impact and time investment
+  priority: 8
+- instruction: One thing at a time — remind me of the closing principle when needed
+  priority: 9
+- instruction: Prefer actionable next steps over abstract strategy
+  priority: 7
+- instruction: When discussing ESSE Group vision, keep it grounded in current-horizon priorities
+  priority: 8

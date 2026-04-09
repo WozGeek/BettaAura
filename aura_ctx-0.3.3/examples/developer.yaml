@@ -1,0 +1,99 @@
+name: developer
+scope: development
+meta:
+  schema_version: 0.1.0
+  description: Full-stack development context — TypeScript/Python, Next.js, dark-themed products.
+  tags:
+  - personal
+  - active
+facts:
+- key: languages.primary
+  value:
+  - TypeScript
+  - Python
+  type: skill
+  confidence: high
+  source: manual
+- key: languages.secondary
+  value:
+  - Java
+  type: skill
+  confidence: high
+  source: manual
+- key: languages.learning
+  value:
+  - Rust
+  type: skill
+  confidence: high
+  source: manual
+- key: frameworks.frontend
+  value:
+  - Next.js 15
+  - React
+  - Tailwind CSS
+  - Framer Motion
+  type: skill
+  confidence: high
+  source: manual
+- key: frameworks.backend
+  value:
+  - FastAPI
+  - Supabase
+  - Python (pandas, scipy, numpy)
+  type: skill
+  confidence: high
+  source: manual
+- key: infrastructure
+  value:
+  - Vercel
+  - Supabase
+  - GitHub Actions
+  type: skill
+  confidence: high
+  source: manual
+- key: editor
+  value: Cursor
+  type: preference
+  confidence: high
+  source: manual
+- key: ai_tools
+  value:
+  - Claude (primary)
+  - Cursor AI
+  type: preference
+  confidence: high
+  source: manual
+- key: style.design_dna
+  value: "Dark themes (#09090b backgrounds), monochromatic palette, zero-border-radius, Linear/Notion/Cursor aesthetic, no gradients, minimal premium feel"
+  type: style
+  confidence: high
+  source: manual
+- key: style.code
+  value: "Explicit types, functional patterns, minimal comments, descriptive names"
+  type: style
+  confidence: high
+  source: manual
+- key: active_projects
+  value:
+  - Hotepia (knowledge engine, Next.js/TypeScript)
+  - aura (portable AI context, Python CLI)
+  type: context
+  confidence: high
+  source: manual
+rules:
+- instruction: Always use TypeScript strict mode — no 'any', no implicit returns
+  priority: 9
+- instruction: Use Tailwind core utility classes only (no compiler-dependent classes)
+  priority: 8
+- instruction: Dark theme by default — use CSS variables for all colors
+  priority: 8
+- instruction: Prefer functional components with hooks over class components
+  priority: 7
+- instruction: Error handling with specific types, not generic catches
+  priority: 7
+- instruction: Use descriptive variable names — no single letters except loop iterators
+  priority: 6
+- instruction: "Font preferences: Cormorant Garamond for display, system fonts for body"
+  priority: 5
+- instruction: When building UI, use onMouseDown with e.preventDefault() for interactive elements to avoid multi-click bugs
+  priority: 6
