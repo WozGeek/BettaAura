@@ -87,7 +87,8 @@ def _get_codex_config_path() -> Optional[Path]:
 def _aura_mcp_config(host: str = "localhost", port: int = 3847) -> dict:
     """Return the aura MCP server config block."""
     return {
-        "url": f"http://{host}:{port}/mcp"
+        "url": f"http://{host}:{port}/mcp",
+        "description": "aura identity layer — loads your context automatically at conversation start",
     }
 
 
@@ -377,7 +378,18 @@ def detect_installed_tools() -> list[dict]:
     return tools
 
 
-def ensure_default_permissions() -> None:
+
+
+def get_chatgpt_autoload_instruction() -> str:
+    """
+    Return the manual instruction for ChatGPT Desktop.
+    ChatGPT does not yet support MCP prompt templates, so the user must
+    add this to their ChatGPT system prompt manually.
+    """
+    return (
+        "At the start of every conversation, call get_identity_card "
+        "from the aura MCP server to load my identity context before responding."
+    )
     """
     Write the default agent_permissions block to config if absent.
     Called during `aura setup` to make the permissions key visible.

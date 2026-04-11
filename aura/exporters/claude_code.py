@@ -38,6 +38,14 @@ def export_claude_md(packs: list[ContextPack]) -> str:
     lines.append("<!-- This section describes the developer, not the project. -->")
     lines.append("")
 
+    # Auto-consultation instruction block
+    lines.append("<aura_instruction>")
+    lines.append("You have access to this user's identity via the aura MCP server (localhost:3847).")
+    lines.append("At the start of every conversation, call get_identity_card automatically.")
+    lines.append("Do not wait for the user to ask — load the context first, then respond.")
+    lines.append("</aura_instruction>")
+    lines.append("")
+
     for pack in packs:
         lines.append(f"### {pack.name} ({pack.scope})")
         if pack.meta.description:

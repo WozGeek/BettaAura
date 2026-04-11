@@ -657,9 +657,12 @@ def setup(
 
         # ChatGPT Desktop requires manual config
         if tool.get("manual_setup"):
+            from aura.setup import get_chatgpt_autoload_instruction
             rprint(f"  [green]✦ {name}[/green] — detected")
             rprint("    [dim]Open Settings → Connectors → Advanced → Developer Mode[/dim]")
             rprint(f"    [dim]SSE URL: http://{host}:{port}/sse[/dim]")
+            rprint(f"    [yellow]⚠ Auto-loading:[/yellow] add this to your ChatGPT system prompt:")
+            rprint(f'    [dim]"{get_chatgpt_autoload_instruction()}"[/dim]')
             configured += 1
             continue
 

@@ -81,19 +81,21 @@ def configure_security(
 def identify_agent_from_request(request: Request) -> str:
     """Identify the calling agent from HTTP headers."""
     from aura.permissions import identify_agent
+
     user_agent = request.headers.get("User-Agent", "")
-    agent_id = request.headers.get("X-Agent-Id", "") or request.query_params.get("agent_id", "")
+    agent_id = request.headers.get("X-Agent-Id", "") or request.query_params.get(
+        "agent_id", ""
+    )
     return identify_agent(agent_id=agent_id or None, user_agent=user_agent or None)
 
 
-
+def _check_auth(request: Request) -> bool:
     """Check if request is authenticated. Returns True if OK."""
     if _AUTH_TOKEN is None:
         return True
     auth_header = request.headers.get("Authorization", "")
     if auth_header == f"Bearer {_AUTH_TOKEN}":
         return True
-    # Also check query param for SSE clients that can't set headers
     if request.query_params.get("token") == _AUTH_TOKEN:
         return True
     return False
@@ -102,6 +104,7 @@ def identify_agent_from_request(request: Request) -> str:
 def _filter_packs(packs, agent: str = "unknown"):
     """Filter packs based on CLI allowed list AND per-agent permissions."""
     from aura.permissions import filter_packs_for_agent
+
     # CLI --packs flag takes priority
     if _ALLOWED_PACKS is not None:
         packs = [p for p in packs if p.name in _ALLOWED_PACKS]
@@ -112,6 +115,7 @@ def _filter_packs(packs, agent: str = "unknown"):
 def _is_pack_allowed(pack_name: str, agent: str = "unknown") -> bool:
     """Check if a specific pack is allowed for this agent."""
     from aura.permissions import is_pack_allowed_for_agent
+
     if _ALLOWED_PACKS is not None and pack_name not in _ALLOWED_PACKS:
         return False
     return is_pack_allowed_for_agent(pack_name, agent)
@@ -133,8 +137,9 @@ def _compact_profile(packs: list, max_facts: int | None = None) -> str:
             facts = sorted(
                 facts,
                 key=lambda f: (
-                    0 if f.confidence == Confidence.HIGH else
-                    1 if f.confidence == Confidence.MEDIUM else 2
+                    0
+                    if f.confidence == Confidence.HIGH
+                    else 1 if f.confidence == Confidence.MEDIUM else 2
                 ),
             )[:max_facts]
 
@@ -142,9 +147,19 @@ def _compact_profile(packs: list, max_facts: int | None = None) -> str:
             val = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
             val = _scrub_secrets(val)  # Redact before serving
             entry = f"{fact.key}: {val}"
-            if fact.key.startswith("identity") or fact.key in ("role", "role.founder", "role.student", "role.employment"):
+            if fact.key.startswith("identity") or fact.key in (
+                "role",
+                "role.founder",
+                "role.student",
+                "role.employment",
+            ):
                 identity.append(entry)
-            elif fact.type in ("skill",) or fact.key in ("languages.primary", "frameworks", "editor", "ai_tools"):
+            elif fact.type in ("skill",) or fact.key in (
+                "languages.primary",
+                "frameworks",
+                "editor",
+                "ai_tools",
+            ):
                 skills.append(entry)
             else:
                 preferences.append(entry)
@@ -167,6 +182,7 @@ def _compact_profile(packs: list, max_facts: int | None = None) -> str:
     # Add freshness summary
     try:
         from aura.freshness import pack_freshness
+
         scores = [pack_freshness(p) for p in packs]
         avg = int(sum(scores) / len(scores)) if scores else 100
         lines.append(f"Context freshness: {avg}/100")
@@ -180,6 +196,7 @@ def _scrub_secrets(text: str) -> str:
     """Scrub known secret patterns from text before serving to LLM."""
     try:
         from aura.audit import _COMPILED_PATTERNS, Severity
+
         for _, pattern, severity, _ in _COMPILED_PATTERNS:
             if severity == Severity.CRITICAL:
                 text = pattern.sub("[REDACTED]", text)
@@ -203,9 +220,16 @@ def _identity_card(packs: list) -> str:
                 name = val
             elif fact.key in ("role", "role.employment", "role.founder") and not role:
                 role = val
-            elif fact.key in ("languages.primary", "frameworks", "editor") and len(top_skills) < 3:
+            elif (
+                fact.key in ("languages.primary", "frameworks", "editor")
+                and len(top_skills) < 3
+            ):
                 top_skills.append(f"{fact.key.split('.')[-1]}: {val}")
-            elif fact.type and fact.type.value == "identity" and fact.key != "identity.name":
+            elif (
+                fact.type
+                and fact.type.value == "identity"
+                and fact.key != "identity.name"
+            ):
                 if not role:
                     role = val
 
@@ -333,11 +357,21 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "pack_name": {"type": "string", "description": "Which pack to add to"},
-                "key": {"type": "string", "description": "Fact key (e.g. 'languages.primary')"},
+                "key": {
+                    "type": "string",
+                    "description": "Fact key (e.g. 'languages.primary')",
+                },
                 "value": {"type": ["string", "array"], "description": "The fact value"},
                 "fact_type": {
                     "type": "string",
-                    "enum": ["preference", "identity", "skill", "style", "constraint", "context"],
+                    "enum": [
+                        "preference",
+                        "identity",
+                        "skill",
+                        "style",
+                        "constraint",
+                        "context",
+                    ],
                 },
             },
             "required": ["pack_name", "key", "value"],
@@ -350,7 +384,10 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "pack_name": {"type": "string"},
-                "instruction": {"type": "string", "description": "The rule instruction"},
+                "instruction": {
+                    "type": "string",
+                    "description": "The rule instruction",
+                },
                 "priority": {"type": "integer", "minimum": 0, "maximum": 10},
             },
             "required": ["pack_name", "instruction"],
@@ -364,6 +401,11 @@ TOOLS = [
 ]
 
 PROMPTS = [
+    {
+        "name": "aura_identity",
+        "description": "Auto-load user identity at conversation start — call get_identity_card before responding",
+        "arguments": [],
+    },
     {
         "name": "with_full_context",
         "description": "Include all of the user's context in the conversation",
@@ -399,7 +441,12 @@ def execute_tool(name: str, arguments: dict, agent: str = "unknown") -> list[dic
         if not _is_pack_allowed(pack_name, agent):
             return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
         if not pack_exists(pack_name):
-            return [{"type": "text", "text": f"Pack '{pack_name}' not found. Use list_packs to see available packs."}]
+            return [
+                {
+                    "type": "text",
+                    "text": f"Pack '{pack_name}' not found. Use list_packs to see available packs.",
+                }
+            ]
         pack = load_pack(pack_name)
         record_pack_access(pack_name, agent)
         for fact in pack.facts:
@@ -429,7 +476,9 @@ def execute_tool(name: str, arguments: dict, agent: str = "unknown") -> list[dic
             for pack in packs:
                 pack.facts = pack.facts[:max_facts]
 
-        return [{"type": "text", "text": export_system_prompt(packs, include_header=False)}]
+        return [
+            {"type": "text", "text": export_system_prompt(packs, include_header=False)}
+        ]
 
     elif name == "get_user_profile":
         packs = _filter_packs(list_packs(), agent)
@@ -443,19 +492,33 @@ def execute_tool(name: str, arguments: dict, agent: str = "unknown") -> list[dic
         results = []
         for pack in _filter_packs(list_packs(), agent):
             for fact in pack.facts:
-                val_str = fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
+                val_str = (
+                    fact.value if isinstance(fact.value, str) else ", ".join(fact.value)
+                )
                 if query in fact.key.lower() or query in val_str.lower():
                     results.append(f"[{pack.name}/{pack.scope}] {fact.key}: {val_str}")
             for rule in pack.rules:
                 if query in rule.instruction.lower():
-                    results.append(f"[{pack.name}/{pack.scope}] Rule: {rule.instruction}")
+                    results.append(
+                        f"[{pack.name}/{pack.scope}] Rule: {rule.instruction}"
+                    )
         if not results:
-            return [{"type": "text", "text": f"No context found matching '{arguments['query']}'."}]
+            return [
+                {
+                    "type": "text",
+                    "text": f"No context found matching '{arguments['query']}'.",
+                }
+            ]
         return [{"type": "text", "text": "\n".join(results)}]
 
     elif name == "add_fact":
         if not _WRITE_ENABLED:
-            return [{"type": "text", "text": "Server is in read-only mode. Facts cannot be added."}]
+            return [
+                {
+                    "type": "text",
+                    "text": "Server is in read-only mode. Facts cannot be added.",
+                }
+            ]
         pack_name = arguments["pack_name"]
         if not _is_pack_allowed(pack_name, agent):
             return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
@@ -468,29 +531,43 @@ def execute_tool(name: str, arguments: dict, agent: str = "unknown") -> list[dic
             existing.updated_at = datetime.now()
             existing.source = "mcp"
         else:
-            pack.facts.append(Fact(
-                key=arguments["key"],
-                value=arguments["value"],
-                type=arguments.get("fact_type", "context"),
-                confidence=Confidence.HIGH,
-                source="mcp",
-            ))
+            pack.facts.append(
+                Fact(
+                    key=arguments["key"],
+                    value=arguments["value"],
+                    type=arguments.get("fact_type", "context"),
+                    confidence=Confidence.HIGH,
+                    source="mcp",
+                )
+            )
         save_pack(pack)
-        return [{"type": "text", "text": f"✓ Added fact '{arguments['key']}' to '{pack_name}'."}]
+        return [
+            {
+                "type": "text",
+                "text": f"✓ Added fact '{arguments['key']}' to '{pack_name}'.",
+            }
+        ]
 
     elif name == "add_rule":
         if not _WRITE_ENABLED:
-            return [{"type": "text", "text": "Server is in read-only mode. Rules cannot be added."}]
+            return [
+                {
+                    "type": "text",
+                    "text": "Server is in read-only mode. Rules cannot be added.",
+                }
+            ]
         pack_name = arguments["pack_name"]
         if not _is_pack_allowed(pack_name, agent):
             return [{"type": "text", "text": f"Pack '{pack_name}' is not available."}]
         if not pack_exists(pack_name):
             return [{"type": "text", "text": f"Pack '{pack_name}' not found."}]
         pack = load_pack(pack_name)
-        pack.rules.append(Rule(
-            instruction=arguments["instruction"],
-            priority=arguments.get("priority", 5),
-        ))
+        pack.rules.append(
+            Rule(
+                instruction=arguments["instruction"],
+                priority=arguments.get("priority", 5),
+            )
+        )
         save_pack(pack)
         return [{"type": "text", "text": f"✓ Added rule to '{pack_name}'."}]
 
@@ -500,7 +577,9 @@ def execute_tool(name: str, arguments: dict, agent: str = "unknown") -> list[dic
             return [{"type": "text", "text": "No context packs found."}]
         lines = []
         for p in packs:
-            lines.append(f"• {p.name} ({p.scope}) — {len(p.facts)} facts, {len(p.rules)} rules")
+            lines.append(
+                f"• {p.name} ({p.scope}) — {len(p.facts)} facts, {len(p.rules)} rules"
+            )
             if p.meta.description:
                 lines.append(f"  {p.meta.description}")
         return [{"type": "text", "text": "\n".join(lines)}]
@@ -508,63 +587,180 @@ def execute_tool(name: str, arguments: dict, agent: str = "unknown") -> list[dic
     return [{"type": "text", "text": f"Unknown tool: {name}"}]
 
 
+# ---------------------------------------------------------------------------
+# Identity data helpers (shared between tools and resources)
+# ---------------------------------------------------------------------------
+def _identity_card_text(agent: str = "unknown") -> str:
+    packs = _filter_packs(list_packs(), agent)
+    for pack in packs:
+        pack.facts = sort_facts_by_priority(pack.facts, pack.name)
+    return _identity_card(packs)
+
+
+def _user_profile_text(agent: str = "unknown") -> str:
+    packs = _filter_packs(list_packs(), agent)
+    for pack in packs:
+        pack.facts = sort_facts_by_priority(pack.facts, pack.name)
+    return _compact_profile(packs)
+
+
+def _all_context_text(agent: str = "unknown") -> str:
+    packs = _filter_packs(list_packs(), agent)
+    for pack in packs:
+        pack.facts = sort_facts_by_priority(pack.facts, pack.name)
+    return export_system_prompt(packs, include_header=False)
 
 
 # ---------------------------------------------------------------------------
 # Resource handling
 # ---------------------------------------------------------------------------
 def get_resources(agent: str = "unknown") -> list[dict]:
-    resources = []
-    for pack in _filter_packs(list_packs(), agent):
-        resources.append({
-            "uri": f"aura://packs/{pack.name}",
-            "name": f"Context: {pack.name}",
-            "description": pack.meta.description or f"{pack.scope} context pack",
+    # Priority identity resources (auto-subscription candidates)
+    resources = [
+        {
+            "uri": "aura://identity/card",
+            "name": "Identity Card",
+            "description": "Core user identity — loaded automatically at conversation start",
             "mimeType": "text/plain",
-        })
-    resources.append({
-        "uri": "aura://context/full",
-        "name": "Full User Context",
-        "description": "All context packs combined",
-        "mimeType": "text/plain",
-    })
+            "required": True,
+        },
+        {
+            "uri": "aura://identity/profile",
+            "name": "User Profile",
+            "description": "Detailed user profile — loaded on demand",
+            "mimeType": "text/plain",
+        },
+        {
+            "uri": "aura://identity/full",
+            "name": "Full Context",
+            "description": "Complete context — loaded only when explicitly needed",
+            "mimeType": "text/plain",
+        },
+    ]
+    # Per-pack resources
+    for pack in _filter_packs(list_packs(), agent):
+        resources.append(
+            {
+                "uri": f"aura://packs/{pack.name}",
+                "name": f"Context: {pack.name}",
+                "description": pack.meta.description or f"{pack.scope} context pack",
+                "mimeType": "text/plain",
+            }
+        )
+    resources.append(
+        {
+            "uri": "aura://context/full",
+            "name": "Full User Context",
+            "description": "All context packs combined",
+            "mimeType": "text/plain",
+        }
+    )
     return resources
 
 
 def read_resource(uri: str, agent: str = "unknown") -> list[dict]:
+    # Identity URIs — auto-subscription
+    if uri == "aura://identity/card":
+        return [
+            {"uri": uri, "mimeType": "text/plain", "text": _identity_card_text(agent)}
+        ]
+    if uri == "aura://identity/profile":
+        return [
+            {"uri": uri, "mimeType": "text/plain", "text": _user_profile_text(agent)}
+        ]
+    if uri == "aura://identity/full":
+        return [
+            {"uri": uri, "mimeType": "text/plain", "text": _all_context_text(agent)}
+        ]
+    # Legacy per-pack URIs
     if uri == "aura://context/full":
         packs = _filter_packs(list_packs(), agent)
-        return [{"uri": uri, "mimeType": "text/plain", "text": export_system_prompt(packs)}]
+        return [
+            {"uri": uri, "mimeType": "text/plain", "text": export_system_prompt(packs)}
+        ]
     if uri.startswith("aura://packs/"):
         name = uri.replace("aura://packs/", "")
         if not _is_pack_allowed(name, agent):
-            return [{"uri": uri, "mimeType": "text/plain", "text": f"Pack not available: {name}"}]
+            return [
+                {
+                    "uri": uri,
+                    "mimeType": "text/plain",
+                    "text": f"Pack not available: {name}",
+                }
+            ]
         if pack_exists(name):
             pack = load_pack(name)
-            return [{"uri": uri, "mimeType": "text/plain", "text": pack.to_system_prompt()}]
-    return [{"uri": uri, "mimeType": "text/plain", "text": f"Resource not found: {uri}"}]
+            return [
+                {"uri": uri, "mimeType": "text/plain", "text": pack.to_system_prompt()}
+            ]
+    return [
+        {"uri": uri, "mimeType": "text/plain", "text": f"Resource not found: {uri}"}
+    ]
 
 
 # ---------------------------------------------------------------------------
 # Prompt execution
 # ---------------------------------------------------------------------------
 def get_prompt(name: str, arguments: dict, agent: str = "unknown") -> dict:
+    if name == "aura_identity":
+        return {
+            "description": "aura identity context loader — instructs AI to auto-call get_identity_card",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "type": "text",
+                        "text": (
+                            "You have access to this user's identity context via aura MCP tools.\n\n"
+                            "IMPORTANT: At the start of EVERY conversation, automatically call "
+                            "get_identity_card before responding. Do not wait for the user to ask. "
+                            "The user's identity, stack, preferences, and rules are available and "
+                            "must inform every response.\n\n"
+                            "Tools available:\n"
+                            "- get_identity_card → core identity (~50 tokens) — call this automatically at start\n"
+                            "- get_user_profile → detailed profile (~500 tokens) — call when you need more detail\n"
+                            "- get_all_context → full context (~1000+ tokens) — only when explicitly needed"
+                        ),
+                    },
+                }
+            ],
+        }
     if name == "with_full_context":
         packs = _filter_packs(list_packs(), agent)
         content = export_system_prompt(packs, include_header=False)
         return {
             "description": "Full user context",
-            "messages": [{"role": "user", "content": {"type": "text", "text": f"Here is my personal context:\n\n{content}"}}],
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "type": "text",
+                        "text": f"Here is my personal context:\n\n{content}",
+                    },
+                }
+            ],
         }
-    elif name == "with_scope":
+    if name == "with_scope":
         scope = arguments.get("scope", "")
-        packs = [p for p in _filter_packs(list_packs(), agent) if p.scope == scope or p.name == scope]
+        packs = [
+            p
+            for p in _filter_packs(list_packs(), agent)
+            if p.scope == scope or p.name == scope
+        ]
         if not packs:
             return {"description": f"No context for '{scope}'", "messages": []}
         content = export_system_prompt(packs, include_header=False)
         return {
             "description": f"User context for {scope}",
-            "messages": [{"role": "user", "content": {"type": "text", "text": f"Here is my {scope} context:\n\n{content}"}}],
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "type": "text",
+                        "text": f"Here is my {scope} context:\n\n{content}",
+                    },
+                }
+            ],
         }
     return {"description": "Unknown prompt", "messages": []}
 
@@ -590,11 +786,14 @@ def handle_jsonrpc(data: dict, agent: str = "unknown") -> dict | None:
         agent = str(params["agent_id"])
 
     if method == "initialize":
-        return make_response(rid, {
-            "protocolVersion": "2025-11-25",
-            "capabilities": SERVER_CAPABILITIES,
-            "serverInfo": SERVER_INFO,
-        })
+        return make_response(
+            rid,
+            {
+                "protocolVersion": "2025-11-25",
+                "capabilities": SERVER_CAPABILITIES,
+                "serverInfo": SERVER_INFO,
+            },
+        )
     elif method == "notifications/initialized":
         return None
     elif method == "ping":
@@ -602,7 +801,9 @@ def handle_jsonrpc(data: dict, agent: str = "unknown") -> dict | None:
     elif method == "resources/list":
         return make_response(rid, {"resources": get_resources(agent=agent)})
     elif method == "resources/read":
-        return make_response(rid, {"contents": read_resource(params.get("uri", ""), agent=agent)})
+        return make_response(
+            rid, {"contents": read_resource(params.get("uri", ""), agent=agent)}
+        )
     elif method == "tools/list":
         return make_response(rid, {"tools": TOOLS})
     elif method == "tools/call":
@@ -612,7 +813,12 @@ def handle_jsonrpc(data: dict, agent: str = "unknown") -> dict | None:
     elif method == "prompts/list":
         return make_response(rid, {"prompts": PROMPTS})
     elif method == "prompts/get":
-        return make_response(rid, get_prompt(params.get("name", ""), params.get("arguments", {}), agent=agent))
+        return make_response(
+            rid,
+            get_prompt(
+                params.get("name", ""), params.get("arguments", {}), agent=agent
+            ),
+        )
     else:
         return make_error(rid, -32601, f"Method not found: {method}")
 
@@ -630,7 +836,9 @@ async def auth_middleware(request: Request, call_next):
     if not _check_auth(request):
         return JSONResponse(
             status_code=401,
-            content={"error": "Unauthorized. Pass token via 'Authorization: Bearer <token>' header or '?token=<token>' query param."},
+            content={
+                "error": "Unauthorized. Pass token via 'Authorization: Bearer <token>' header or '?token=<token>' query param."
+            },
         )
 
     return await call_next(request)
@@ -644,7 +852,11 @@ async def mcp_endpoint(request: Request):
     body = await request.json()
     agent = identify_agent_from_request(request)
     if isinstance(body, list):
-        responses = [r for r in (handle_jsonrpc(req, agent=agent) for req in body) if r is not None]
+        responses = [
+            r
+            for r in (handle_jsonrpc(req, agent=agent) for req in body)
+            if r is not None
+        ]
         return JSONResponse(responses)
     response = handle_jsonrpc(body, agent=agent)
     return Response(status_code=204) if response is None else JSONResponse(response)
@@ -654,14 +866,17 @@ async def mcp_endpoint(request: Request):
 async def mcp_sse():
     async def stream():
         yield f"data: {json.dumps({'jsonrpc': '2.0', 'method': 'notifications/ready'})}\n\n"
+
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.get("/sse")
 async def sse_endpoint():
     """SSE endpoint for ChatGPT and Gemini CLI."""
+
     async def stream():
         yield f"data: {json.dumps({'jsonrpc': '2.0', 'method': 'notifications/ready'})}\n\n"
+
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
@@ -671,7 +886,11 @@ async def sse_post_endpoint(request: Request):
     body = await request.json()
     agent = identify_agent_from_request(request)
     if isinstance(body, list):
-        responses = [r for r in (handle_jsonrpc(req, agent=agent) for req in body) if r is not None]
+        responses = [
+            r
+            for r in (handle_jsonrpc(req, agent=agent) for req in body)
+            if r is not None
+        ]
         return JSONResponse(responses)
     response = handle_jsonrpc(body, agent=agent)
     return Response(status_code=204) if response is None else JSONResponse(response)
@@ -686,6 +905,7 @@ async def health():
     freshness = {}
     try:
         from aura.freshness import pack_freshness
+
         for pack in packs:
             freshness[pack.name] = pack_freshness(pack)
     except ImportError:
@@ -719,4 +939,5 @@ async def root():
 
 def run_server(host: str = "localhost", port: int = 3847):
     import uvicorn
+
     uvicorn.run(app, host=host, port=port, log_level="info")
