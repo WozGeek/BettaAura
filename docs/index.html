@@ -4,186 +4,269 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>aura — Your portable AI identity</title>
-<meta name="description" content="Stop re-explaining yourself to every AI tool. Define your identity once in YAML, serve it to Claude, ChatGPT, Cursor, and Gemini via MCP. Open source.">
+<meta name="description" content="Stop re-explaining yourself to every AI tool. Define your identity once in YAML, serve it to Claude, ChatGPT, Cursor, and Gemini via MCP. 100% local. Open source.">
+<meta property="og:title" content="aura — Stop re-explaining yourself to every AI tool">
+<meta property="og:description" content="Define your identity once. Every AI tool. No cloud. Open source.">
+<meta name="theme-color" content="#08080a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0a0a0b;--surface:#111113;--border:#1e1e22;
-  --text:#e8e6e3;--muted:#8a8880;--accent:#5b9bf7;
-  --green:#4ade80;--amber:#fbbf24;--mono:'JetBrains Mono',monospace;
-  --serif:'Source Serif 4',Georgia,serif;
+  --bg:#08080a;--surface:#101013;--surface2:#141418;
+  --border:#1c1c21;--border2:#242429;
+  --text:#e2e0dc;--muted:#6b6966;--dim:#3a3836;
+  --accent:#4f8ef7;--accent2:#3a6fd4;
+  --green:#3dba6c;--amber:#d4a017;
+  --mono:'JetBrains Mono',monospace;--serif:'Lora',Georgia,serif;
 }
-html{font-size:16px;scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--mono);line-height:1.7;-webkit-font-smoothing:antialiased}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-.container{max-width:720px;margin:0 auto;padding:0 24px}
-
-/* Hero */
-.hero{padding:80px 0 40px;text-align:center}
-.hero-logo{font-size:3rem;font-weight:600;letter-spacing:-0.03em;margin-bottom:8px}
-.hero-logo span{color:var(--accent)}
-.hero-sub{font-family:var(--serif);font-size:1.15rem;color:var(--muted);font-style:italic;margin-bottom:12px}
-.hero-desc{font-size:0.85rem;color:var(--muted);margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto;line-height:1.8}
-.hero-install{display:inline-block;background:var(--surface);border:1px solid var(--border);padding:12px 28px;border-radius:8px;font-size:0.95rem;cursor:pointer;transition:border-color 0.2s}
-.hero-install:hover{border-color:var(--accent)}
-.hero-install code{color:var(--green)}
-.hero-badges{margin-top:24px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.hero-badges img{height:20px}
-
-/* Section */
-section{padding:48px 0;border-top:1px solid var(--border)}
-section h2{font-size:1.2rem;font-weight:600;margin-bottom:20px;letter-spacing:-0.02em}
-section h2::before{content:'✦ ';color:var(--accent)}
-section p{color:var(--muted);margin-bottom:16px;font-size:0.88rem;line-height:1.8}
-
-/* Terminal */
-.terminal{background:#0d0d0f;border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin:16px 0 24px;font-size:0.82rem;line-height:1.9;overflow-x:auto}
-.terminal .prompt{color:var(--green)}
-.terminal .comment{color:#555}
-.terminal .output{color:var(--muted)}
-.terminal .flag{color:var(--amber)}
-
-/* Grid */
-.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:20px 0}
-.tool-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;font-size:0.82rem}
-.tool-card strong{display:block;margin-bottom:4px;color:var(--text);font-size:0.88rem}
-.tool-card span{color:var(--muted);font-size:0.75rem}
-.tool-badge{display:inline-block;font-size:0.65rem;padding:2px 8px;border-radius:10px;margin-top:8px;font-weight:500}
-.badge-auto{background:#1a3a1a;color:var(--green)}
-.badge-manual{background:#3a2a1a;color:var(--amber)}
-
-/* Features */
-.features{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
-.feature{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
-.feature strong{display:block;font-size:0.85rem;margin-bottom:4px}
-.feature p{font-size:0.78rem;margin:0;color:var(--muted)}
-
-/* Highlights */
-.highlights{margin:20px 0;font-size:0.85rem;line-height:2.2}
-.highlights li{color:var(--muted);margin-bottom:4px;list-style:none}
-.highlights li::before{content:'✓ ';color:var(--green);font-weight:600}
-.highlights li strong{color:var(--text)}
-
-/* Commands table */
-.cmd-table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:16px 0}
-.cmd-table th{text-align:left;color:var(--muted);font-weight:400;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em}
-.cmd-table td{padding:6px 0;border-bottom:1px solid #141416}
-.cmd-table td:first-child{color:var(--green);white-space:nowrap;padding-right:20px}
-
-/* Templates */
-.templates-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:16px 0}
-.tmpl{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:0.78rem}
-.tmpl code{color:var(--green);font-size:0.82rem}
-.tmpl span{display:block;color:var(--muted);font-size:0.7rem;margin-top:2px}
-
-/* Footer */
-footer{padding:48px 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:0.75rem}
-footer a{color:var(--muted)}
-footer a:hover{color:var(--text)}
-
-/* Mobile */
-@media(max-width:600px){
-  .hero{padding:48px 0 32px}
-  .hero-logo{font-size:2.2rem}
-  .features{grid-template-columns:1fr}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);line-height:1.75;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.028;pointer-events:none;z-index:1000}
+a{color:var(--accent);text-decoration:none;transition:color .15s}
+a:hover{color:#7aaff9}
+code{font-family:var(--mono)}
+.container{max-width:740px;margin:0 auto;padding:0 28px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(8,8,10,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 0}
+.nav-inner{max-width:740px;margin:0 auto;padding:0 28px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-weight:600;font-size:.95rem;letter-spacing:-.02em}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:24px;font-size:.78rem}
+.nav-links a{color:var(--muted);transition:color .15s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{font-size:.75rem;padding:6px 14px;background:var(--accent);color:#fff;border-radius:5px;font-weight:500;transition:background .15s}
+.nav-cta:hover{background:var(--accent2);color:#fff}
+.hero{padding:140px 0 80px;text-align:center;position:relative}
+.hero::before{content:'';position:absolute;top:80px;left:50%;transform:translateX(-50%);width:500px;height:300px;background:radial-gradient(ellipse at center,rgba(79,142,247,.06) 0%,transparent 70%);pointer-events:none}
+.hero-eyebrow{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+.hero-mark{font-size:3.6rem;font-weight:600;letter-spacing:-.04em;line-height:1;margin-bottom:10px}
+.hero-mark .star{color:var(--accent);font-size:2.4rem;vertical-align:middle;margin-right:6px}
+.hero-tagline{font-family:var(--serif);font-style:italic;font-size:1.15rem;color:var(--muted);margin-bottom:16px}
+.hero-desc{font-size:.83rem;color:var(--dim);max-width:460px;margin:0 auto 36px;line-height:1.9}
+.hero-desc strong{color:var(--muted);font-weight:500}
+.install-box{display:inline-flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border2);padding:12px 20px;border-radius:8px;cursor:pointer;transition:border-color .2s,background .2s}
+.install-box:hover{border-color:var(--accent);background:var(--surface2)}
+.install-cmd{font-size:.9rem;color:var(--green)}
+.install-hint{font-size:.7rem;color:var(--dim);transition:color .2s}
+.install-box:hover .install-hint{color:var(--muted)}
+.hero-badges{margin-top:20px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;opacity:.7}
+.hero-badges img{height:18px}
+.divider{height:1px;background:var(--border);margin:0}
+section{padding:56px 0}
+.section-label{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:24px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+section h2{font-size:1.1rem;font-weight:600;margin-bottom:20px;letter-spacing:-.02em}
+section p{font-size:.85rem;color:var(--muted);margin-bottom:14px;line-height:1.85}
+.layers{display:flex;flex-direction:column;gap:8px;margin:24px 0}
+.layer{display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:16px;padding:14px 18px;border-radius:7px;border:1px solid var(--border);background:var(--surface);font-size:.82rem;transition:border-color .2s}
+.layer:hover{border-color:var(--border2)}
+.layer.active{border-color:var(--accent);background:rgba(79,142,247,.04)}
+.layer-name{font-weight:500;color:var(--muted)}
+.layer.active .layer-name{color:var(--accent)}
+.layer-desc{color:var(--dim)}
+.layer-badge{font-size:.65rem;padding:3px 9px;border-radius:10px;white-space:nowrap;font-weight:500}
+.badge-aura{background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.25)}
+.badge-other{background:var(--surface2);color:var(--dim);border:1px solid var(--border)}
+.terminal{background:#08080c;border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin:16px 0 24px}
+.terminal-bar{background:#111116;border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%}
+.dot-r{background:#c84b4b}.dot-y{background:#d4a017}.dot-g{background:#3dba6c}
+.terminal-title{font-size:.7rem;color:var(--dim);margin-left:6px;flex:1;text-align:center}
+.terminal-body{padding:20px 22px;font-size:.8rem;line-height:2}
+.p{color:var(--green)}.c{color:var(--dim)}.o{color:var(--muted)}.f{color:var(--amber)}.hi{color:#e2e0dc}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+.compare-box{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:16px 18px}
+.compare-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.compare-label.bad{color:#c84b4b}.compare-label.good{color:var(--green)}
+.compare-text{font-size:.8rem;line-height:1.8}
+.compare-text .q{color:var(--muted)}
+.compare-text .a-bad{color:#c84b4b;opacity:.7}
+.compare-text .a-good{color:var(--green)}
+.tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:20px 0}
+.tool{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:14px 12px;text-align:center;transition:border-color .2s}
+.tool:hover{border-color:var(--border2)}
+.tool-name{font-size:.8rem;font-weight:500;margin-bottom:4px;color:var(--text)}
+.tool-transport{font-size:.68rem;color:var(--dim);margin-bottom:8px}
+.tool-badge{display:inline-block;font-size:.62rem;padding:2px 7px;border-radius:8px;font-weight:500}
+.auto{background:rgba(61,186,108,.12);color:#3dba6c;border:1px solid rgba(61,186,108,.2)}
+.manual{background:rgba(212,160,23,.1);color:var(--amber);border:1px solid rgba(212,160,23,.2)}
+.features{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.feat{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:16px;transition:border-color .2s}
+.feat:hover{border-color:var(--border2)}
+.feat-title{font-size:.82rem;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.feat-icon{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.feat p{font-size:.76rem;color:var(--dim);margin:0;line-height:1.75}
+.tmpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0}
+.tmpl{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-size:.78rem;transition:border-color .2s}
+.tmpl:hover{border-color:var(--border2)}
+.tmpl code{color:var(--green);display:block;margin-bottom:3px}
+.tmpl span{color:var(--dim);font-size:.7rem}
+.cmd-group{margin:20px 0}
+.cmd-group-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
+.cmd-row{display:grid;grid-template-columns:260px 1fr;gap:16px;padding:7px 0;border-bottom:1px solid rgba(28,28,33,.6);font-size:.79rem}
+.cmd-row:last-child{border-bottom:none}
+.cmd-name{color:var(--green);white-space:nowrap}
+.cmd-desc{color:var(--dim)}
+.security-list{margin:20px 0;font-size:.82rem}
+.sec-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.sec-item:last-child{border-bottom:none}
+.sec-dot{width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:6px;flex-shrink:0}
+.sec-title{font-weight:500;color:var(--text);margin-bottom:2px}
+.sec-desc{color:var(--dim);font-size:.76rem;line-height:1.7}
+.cta-block{text-align:center;padding:64px 0;border-top:1px solid var(--border)}
+.cta-block p{color:var(--dim);font-size:.78rem;margin-bottom:28px}
+.cta-links{margin-top:20px;display:flex;gap:24px;justify-content:center;font-size:.8rem}
+footer{border-top:1px solid var(--border);padding:28px 0;text-align:center;font-size:.72rem;color:var(--dim)}
+footer a{color:var(--dim)}
+footer a:hover{color:var(--muted)}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hero>*{animation:fadein .6s ease both}
+.hero-eyebrow{animation-delay:.05s}.hero-mark{animation-delay:.12s}
+.hero-tagline{animation-delay:.18s}.hero-desc{animation-delay:.22s}
+.install-box{animation-delay:.28s}.hero-badges{animation-delay:.34s}
+@media(max-width:640px){
+  .hero-mark{font-size:2.6rem}
+  .compare,.features{grid-template-columns:1fr}
   .tools-grid{grid-template-columns:1fr 1fr}
-  .templates-grid{grid-template-columns:1fr 1fr}
+  .tmpl-grid{grid-template-columns:1fr 1fr}
+  .layer{grid-template-columns:1fr;gap:6px}
+  .layer-badge{display:none}
+  .nav-links{display:none}
+  .cmd-row{grid-template-columns:1fr;gap:2px}
 }
 </style>
 </head>
 <body>
 
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo"><span>✦</span> aura-ctx</div>
+    <div class="nav-links">
+      <a href="#problem">Why</a>
+      <a href="#start">Quick Start</a>
+      <a href="#tools">Tools</a>
+      <a href="#commands">Commands</a>
+      <a href="https://github.com/WozGeek/aura-ctx">GitHub</a>
+    </div>
+    <a href="https://github.com/WozGeek/aura-ctx" class="nav-cta">Star on GitHub</a>
+  </div>
+</nav>
+
 <div class="container">
 
   <div class="hero">
-    <div class="hero-logo"><span>✦</span> aura</div>
-    <div class="hero-sub">Stop re-explaining yourself to every AI tool.</div>
+    <div class="hero-eyebrow">Open source &middot; MIT &middot; 100% local</div>
+    <div class="hero-mark"><span class="star">✦</span>aura</div>
+    <div class="hero-tagline">Stop re-explaining yourself to every AI tool.</div>
     <div class="hero-desc">
-      Define who you are — stack, style, rules — once, in plain YAML.
-      aura serves your identity to Claude, ChatGPT, Cursor, and Gemini via MCP.
-      100% local. No cloud. No lock-in.
+      Define who you are &mdash; your <strong>stack</strong>, <strong>style</strong>, <strong>rules</strong> &mdash; once,
+      in plain YAML files you own. aura serves that identity to Claude, ChatGPT,
+      Cursor, and Gemini through the Model Context Protocol.
     </div>
-    <div class="hero-install" onclick="navigator.clipboard.writeText('pip install aura-ctx').then(()=>this.querySelector('small').textContent=' copied!')">
-      <code>pip install aura-ctx</code> <small style="color:var(--muted);font-size:0.75rem"></small>
+    <div class="install-box" onclick="navigator.clipboard.writeText('pip install aura-ctx').then(()=>{const h=this.querySelector('.install-hint');h.textContent='copied!';setTimeout(()=>h.textContent='click to copy',1800)})">
+      <span class="install-cmd">pip install aura-ctx</span>
+      <span class="install-hint">click to copy</span>
     </div>
     <div class="hero-badges">
-      <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=blue&label=PyPI" /></a>
-      <a href="https://pepy.tech/projects/aura-ctx"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/aura-ctx?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads" /></a>
-      <a href="https://github.com/WozGeek/aura-ctx"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/aura-ctx?style=flat" /></a>
-      <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
+      <a href="https://pypi.org/project/aura-ctx/"><img alt="PyPI" src="https://img.shields.io/pypi/v/aura-ctx?color=4f8ef7&label=PyPI&labelColor=111&style=flat-square"></a>
+      <a href="https://pepy.tech/projects/aura-ctx"><img alt="Downloads" src="https://static.pepy.tech/personalized-badge/aura-ctx?period=total&units=international_system&left_color=111&right_color=3dba6c&left_text=downloads&style=flat-square"></a>
+      <a href="https://github.com/WozGeek/aura-ctx/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/WozGeek/aura-ctx?style=flat-square&color=111&labelColor=111"></a>
+      <img alt="MIT" src="https://img.shields.io/badge/license-MIT-111?style=flat-square&labelColor=111">
     </div>
   </div>
 
-  <section>
-    <h2>Highlights</h2>
-    <ul class="highlights">
-      <li><strong>30-second setup</strong> — scan, onboard, configure, serve in one command</li>
-      <li><strong>14 templates</strong> — frontend, backend, data-scientist, founder, student, and more</li>
-      <li><strong>Cross-tool</strong> — Claude, ChatGPT, Cursor, Gemini, any MCP client</li>
-      <li><strong>Smart token delivery</strong> — 3 levels so AI tools only load what they need</li>
-      <li><strong>Secret scanning</strong> — catches leaked API keys before they reach an LLM</li>
-      <li><strong>File watcher</strong> — hot-reload when you edit a YAML pack</li>
-      <li><strong>No cloud, no telemetry</strong> — YAML on your machine, fully editable</li>
-    </ul>
+  <div class="divider"></div>
+
+  <section id="problem">
+    <div class="section-label">The problem</div>
+    <p>Every AI tool starts from scratch. The industry is building solutions for this, but at the wrong layer.</p>
+    <div class="layers">
+      <div class="layer">
+        <span class="layer-name">Memory</span>
+        <span class="layer-desc">What happened in past conversations &mdash; Mem0, Zep, DeltaMemory</span>
+        <span class="layer-badge badge-other">not aura</span>
+      </div>
+      <div class="layer">
+        <span class="layer-name">Context engineering</span>
+        <span class="layer-desc">What the AI should know right now &mdash; LACP, Claudesidian, OpenClaw</span>
+        <span class="layer-badge badge-other">not aura</span>
+      </div>
+      <div class="layer active">
+        <span class="layer-name">Identity</span>
+        <span class="layer-desc">Who you are, across everything &mdash; stack, style, rules, role</span>
+        <span class="layer-badge badge-aura">✦ aura</span>
+      </div>
+    </div>
+    <p>Memory is session history. Context is prompt engineering. <strong style="color:var(--text)">Identity is who you are</strong> &mdash; structured, portable, and owned by you.</p>
   </section>
 
-  <section>
-    <h2>Quick Start</h2>
+  <section id="start">
+    <div class="section-label">Quick Start</div>
     <div class="terminal">
-      <span class="prompt">$</span> pip install aura-ctx<br>
-      <span class="prompt">$</span> aura quickstart<br><br>
-      <span class="output">Step 1/5 — Scanning your machine...</span><br>
-      <span class="output">  ✦ Detected 12 facts about your dev environment</span><br><br>
-      <span class="output">Step 2/5 — Quick questions about you...</span><br>
-      <span class="output">  ✦ Created writer (2 facts, 3 rules)</span><br>
-      <span class="output">  ✦ Created work (2 facts, 0 rules)</span><br><br>
-      <span class="output">Step 3/5 — Configuring AI tools...</span><br>
-      <span class="output">  ✦ Claude Desktop configured</span><br>
-      <span class="output">  ✦ Cursor configured</span><br><br>
-      <span class="output">Step 4/5 — Security audit...</span><br>
-      <span class="output">  ✦ All clean — no secrets detected</span><br><br>
-      <span class="output">Step 5/5 — Starting MCP server...</span><br>
-      <span class="output">  ✦ http://localhost:3847/mcp</span><br>
-      <span class="output">  Restart your AI tools — they know you now.</span>
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span class="terminal-title">aura quickstart</span>
+      </div>
+      <div class="terminal-body">
+        <span class="p">$</span> pip install -U aura-ctx<br>
+        <span class="p">$</span> aura quickstart<br><br>
+        <span class="o">Step 1/5 &mdash; Scanning your machine...</span><br>
+        <span class="o">&nbsp; ✦ Detected 12 facts about your dev environment</span><br><br>
+        <span class="o">Step 2/5 &mdash; Quick questions about you...</span><br>
+        <span class="o">&nbsp; What's your role? &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &rarr; Full-stack dev</span><br>
+        <span class="o">&nbsp; How do you want AI to talk to you? &rarr; Direct, no fluff</span><br>
+        <span class="o">&nbsp; Any rules or pet peeves? &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &rarr; Always TypeScript strict</span><br>
+        <span class="o">&nbsp; ✦ Created developer (8 facts, 4 rules)</span><br><br>
+        <span class="o">Step 3/5 &mdash; Configuring AI tools...</span><br>
+        <span class="o">&nbsp; ✦ Claude Desktop configured</span><br>
+        <span class="o">&nbsp; ✦ Cursor configured</span><br><br>
+        <span class="o">Step 4/5 &mdash; Security audit...</span><br>
+        <span class="o">&nbsp; ✦ All clean &mdash; no secrets detected</span><br><br>
+        <span class="o">Step 5/5 &mdash; Starting MCP server...</span><br>
+        <span class="o">&nbsp; ✦ <span class="hi">http://localhost:3847/mcp</span></span><br>
+        <span class="o">&nbsp; Restart your AI tools &mdash; they know you now.</span>
+      </div>
     </div>
-    <p>30 seconds. No Docker. No database. No cloud account.</p>
+    <p>No Docker. No database. No cloud account. 30 seconds.</p>
+
+    <h2 style="margin-top:32px;font-size:.95rem">Before and after</h2>
+    <div class="compare">
+      <div class="compare-box">
+        <div class="compare-label bad">Before</div>
+        <div class="compare-text">
+          <span class="q">You: What do you know about me?</span><br><br>
+          <span class="a-bad">Claude: I don't have any information about you. Memory is turned off for your account.</span>
+        </div>
+      </div>
+      <div class="compare-box">
+        <div class="compare-label good">After aura quickstart</div>
+        <div class="compare-text">
+          <span class="q">You: What do you know about me?</span><br><br>
+          <span class="a-good">Claude: Role: CS student &middot; Editor: Cursor<br>Stack: TypeScript, Python, React, FastAPI<br>Rules: TypeScript strict &mdash; no 'any'</span>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <h2>Works With</h2>
+  <section id="tools">
+    <div class="section-label">Supported tools</div>
     <div class="tools-grid">
-      <div class="tool-card">
-        <strong>Claude Desktop</strong>
-        <span>Streamable HTTP</span><br>
-        <span class="tool-badge badge-auto">Auto-configured</span>
-      </div>
-      <div class="tool-card">
-        <strong>Cursor IDE</strong>
-        <span>Streamable HTTP</span><br>
-        <span class="tool-badge badge-auto">Auto-configured</span>
-      </div>
-      <div class="tool-card">
-        <strong>Gemini CLI</strong>
-        <span>SSE</span><br>
-        <span class="tool-badge badge-auto">Auto-configured</span>
-      </div>
-      <div class="tool-card">
-        <strong>ChatGPT</strong>
-        <span>SSE / Dev Mode</span><br>
-        <span class="tool-badge badge-manual">Manual setup</span>
-      </div>
+      <div class="tool"><div class="tool-name">Claude Desktop</div><div class="tool-transport">Streamable HTTP</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">Claude Code</div><div class="tool-transport">Streamable HTTP</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">Cursor IDE</div><div class="tool-transport">Streamable HTTP</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">Windsurf IDE</div><div class="tool-transport">Streamable HTTP</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">VS Code</div><div class="tool-transport">Copilot MCP</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">Gemini CLI</div><div class="tool-transport">SSE</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">Codex CLI</div><div class="tool-transport">Streamable HTTP</div><span class="tool-badge auto">auto</span></div>
+      <div class="tool"><div class="tool-name">ChatGPT</div><div class="tool-transport">SSE / Dev Mode</div><span class="tool-badge manual">manual</span></div>
     </div>
-    <p>Any MCP-compatible client can connect to <code style="color:var(--green)">localhost:3847</code>.</p>
-    <p style="font-size:0.78rem"><a href="https://modelcontextprotocol.io">What's MCP?</a> — An open standard that lets AI tools connect to local data sources.</p>
+    <p>Any MCP-compatible client connects to <code style="color:var(--green)">localhost:3847</code>. &nbsp;<a href="https://modelcontextprotocol.io" style="color:var(--dim);font-size:.78rem">What's MCP? &rarr;</a></p>
   </section>
 
   <section>
-    <h2>Templates</h2>
-    <p>14 built-in templates. Each includes facts and AI rules tailored to the profile.</p>
-    <div class="templates-grid">
+    <div class="section-label">Templates</div>
+    <p>14 built-in templates. Each includes typed facts and AI interaction rules tailored to the profile.</p>
+    <div class="tmpl-grid">
       <div class="tmpl"><code>frontend</code><span>React, Next.js, Tailwind</span></div>
       <div class="tmpl"><code>backend</code><span>FastAPI, SQL, Docker</span></div>
       <div class="tmpl"><code>data-scientist</code><span>pandas, PyTorch, Jupyter</span></div>
@@ -193,107 +276,121 @@ footer a:hover{color:var(--text)}
       <div class="tmpl"><code>founder</code><span>MVP, speed, product</span></div>
       <div class="tmpl"><code>student</code><span>Learning, step-by-step</span></div>
       <div class="tmpl"><code>marketer</code><span>Copy, SEO, growth</span></div>
-      <div class="tmpl"><code>designer</code><span>UX, Figma, a11y</span></div>
-      <div class="tmpl"><code>developer</code><span>General dev context</span></div>
+      <div class="tmpl"><code>designer</code><span>UX, Figma, accessibility</span></div>
       <div class="tmpl"><code>writer</code><span>Tone, style, audience</span></div>
       <div class="tmpl"><code>researcher</code><span>Methodology, sources</span></div>
-      <div class="tmpl"><code>work</code><span>Role, company, team</span></div>
     </div>
     <div class="terminal">
-      <span class="prompt">$</span> aura create mydev <span class="flag">-t</span> frontend<br>
-      <span class="prompt">$</span> aura show mydev
+      <div class="terminal-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="terminal-body">
+        <span class="p">$</span> aura templates<br>
+        <span class="p">$</span> aura create mydev <span class="f">-t</span> frontend<br>
+        <span class="p">$</span> aura show mydev
+      </div>
     </div>
   </section>
 
   <section>
-    <h2>Features</h2>
+    <div class="section-label">Features</div>
     <div class="features">
-      <div class="feature">
-        <strong>Auto-Scan</strong>
-        <p>Detects languages, frameworks, tools, projects, editor, git identity. Incremental — only re-scans what changed.</p>
-      </div>
-      <div class="feature">
-        <strong>Context Packs</strong>
-        <p>Scoped YAML files — developer, writer, work. Typed facts with confidence levels.</p>
-      </div>
-      <div class="feature">
-        <strong>MCP Server</strong>
-        <p>Full Model Context Protocol. Resources, tools, prompts. HTTP + SSE. 3-level token delivery.</p>
-      </div>
-      <div class="feature">
-        <strong>Secret Scanning</strong>
-        <p>Detects 30+ patterns (AWS keys, GitHub tokens, API keys). Auto-redacts before serving to LLMs.</p>
-      </div>
-      <div class="feature">
-        <strong>Import / Export</strong>
-        <p>Import from ChatGPT & Claude. Export to system-prompt, cursorrules, and more.</p>
-      </div>
-      <div class="feature">
-        <strong>File Watcher</strong>
-        <p>aura serve --watch hot-reloads when you edit a YAML pack. Zero restart.</p>
-      </div>
-      <div class="feature">
-        <strong>Pack Health</strong>
-        <p>Doctor detects bloat, stale facts, duplicates, secrets. Consolidation engine merges duplicates. Memory decay with TTL.</p>
-      </div>
-      <div class="feature">
-        <strong>Local-First</strong>
-        <p>No cloud. No database. No Docker. YAML files on your machine. You own everything.</p>
-      </div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Auto-scan</div><p>Detects languages, frameworks, tools, editor, git identity. Incremental with SHA-256 hashing &mdash; only rescans what changed.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Context packs</div><p>Scoped YAML &mdash; developer, writer, work. Typed facts with confidence levels, freshness scoring, and TTL-based decay.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Smart delivery</div><p>3-level token delivery (~50/~500/~1000+). Priority scored by usage + freshness + confidence. Most sessions never exceed Level 1.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Per-agent permissions</div><p>Control which packs each AI tool sees. Cursor gets dev pack only. ChatGPT gets writer + work. Detected via HTTP headers.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Secret scanning</div><p>30+ credential patterns &mdash; AWS keys, GitHub tokens, API keys. Auto-redacts before serving. Last-resort scrub at serve time.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Import &amp; export</div><p>Import from ChatGPT and Claude exports. Export to system-prompt, .cursorrules, CLAUDE.md, AGENTS.md, and more.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>Pack health</div><p>Doctor checks bloat, stale facts, duplicates, secrets. Consolidation merges duplicates. Decay removes expired facts by TTL.</p></div>
+      <div class="feat"><div class="feat-title"><span class="feat-icon"></span>JSON Schema</div><p>Formal schema for context packs. Every pack validated on load. Inspect with <code style="color:var(--green)">aura schema</code> or validate with <code style="color:var(--green)">aura validate</code>.</p></div>
+    </div>
+  </section>
+
+  <section id="commands">
+    <div class="section-label">Commands</div>
+    <div class="cmd-group">
+      <div class="cmd-group-label">Getting started</div>
+      <div class="cmd-row"><span class="cmd-name">aura quickstart</span><span class="cmd-desc">Full setup: scan &rarr; onboard &rarr; configure &rarr; audit &rarr; serve</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura scan</span><span class="cmd-desc">Auto-detect your stack from tools, repos, and config files</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura onboard</span><span class="cmd-desc">5 questions to generate your context packs</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura setup</span><span class="cmd-desc">Auto-configure all detected AI tools</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura serve</span><span class="cmd-desc">Start the MCP server on localhost:3847</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura serve --watch</span><span class="cmd-desc">Hot-reload on YAML changes</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura update</span><span class="cmd-desc">Update to the latest version</span></div>
+    </div>
+    <div class="cmd-group">
+      <div class="cmd-group-label">Managing packs</div>
+      <div class="cmd-row"><span class="cmd-name">aura list</span><span class="cmd-desc">List all context packs</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura show &lt;pack&gt;</span><span class="cmd-desc">Display a pack's full contents with freshness scores</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura add &lt;p&gt; &lt;k&gt; &lt;v&gt;</span><span class="cmd-desc">Add a fact without opening YAML</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura edit &lt;pack&gt;</span><span class="cmd-desc">Open a pack in $EDITOR</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura diff &lt;a&gt; &lt;b&gt;</span><span class="cmd-desc">Compare two packs side by side</span></div>
+    </div>
+    <div class="cmd-group">
+      <div class="cmd-group-label">Analytics &amp; permissions</div>
+      <div class="cmd-row"><span class="cmd-name">aura stats</span><span class="cmd-desc">Show which facts your AI tools use most</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura stats --reset</span><span class="cmd-desc">Clear all usage counters</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura permissions set &lt;agent&gt; &lt;packs&gt;</span><span class="cmd-desc">Restrict an agent to specific packs</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura permissions list</span><span class="cmd-desc">Show current per-agent permissions</span></div>
+    </div>
+    <div class="cmd-group">
+      <div class="cmd-group-label">Health &amp; schema</div>
+      <div class="cmd-row"><span class="cmd-name">aura doctor</span><span class="cmd-desc">Pack health &mdash; bloat, stale facts, duplicates, secrets</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura audit</span><span class="cmd-desc">Scan for leaked API keys, tokens, credentials</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura audit --fix</span><span class="cmd-desc">Auto-redact critical secrets</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura consolidate</span><span class="cmd-desc">Merge duplicate facts, surface contradictions</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura decay</span><span class="cmd-desc">Remove expired facts based on type-aware TTL</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura schema</span><span class="cmd-desc">Print the JSON Schema spec for context packs</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura validate &lt;pack&gt;</span><span class="cmd-desc">Validate a pack &mdash; field-level errors if invalid</span></div>
+    </div>
+    <div class="cmd-group">
+      <div class="cmd-group-label">Import &amp; export</div>
+      <div class="cmd-row"><span class="cmd-name">aura import -s chatgpt &lt;file&gt;</span><span class="cmd-desc">Import from a ChatGPT data export</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura import -s claude &lt;file&gt;</span><span class="cmd-desc">Import from a Claude data export</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura export &lt;pack&gt; -f system-prompt</span><span class="cmd-desc">Universal LLM system prompt</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura export &lt;pack&gt; -f claude-md</span><span class="cmd-desc">CLAUDE.md section for Claude Code</span></div>
+      <div class="cmd-row"><span class="cmd-name">aura export &lt;pack&gt; -f agents-md</span><span class="cmd-desc">AGENTS.md section for Codex, OpenClaw</span></div>
     </div>
   </section>
 
   <section>
-    <h2>Commands</h2>
-    <table class="cmd-table">
-      <tr><th>Command</th><th>Description</th></tr>
-      <tr><td>aura quickstart</td><td>Scan + onboard + setup + audit + serve</td></tr>
-      <tr><td>aura scan</td><td>Auto-detect your stack</td></tr>
-      <tr><td>aura onboard</td><td>5 questions to capture your identity</td></tr>
-      <tr><td>aura serve</td><td>Start MCP server</td></tr>
-      <tr><td>aura serve --watch</td><td>Start with hot-reload on YAML changes</td></tr>
-      <tr><td>aura setup</td><td>Configure Claude, Cursor, Gemini</td></tr>
-      <tr><td>aura templates</td><td>List all 14 templates</td></tr>
-      <tr><td>aura create &lt;n&gt; -t &lt;t&gt;</td><td>Create pack from template</td></tr>
-      <tr><td>aura list</td><td>List all packs</td></tr>
-      <tr><td>aura show &lt;pack&gt;</td><td>Display a pack</td></tr>
-      <tr><td>aura add &lt;p&gt; &lt;k&gt; &lt;v&gt;</td><td>Add a fact</td></tr>
-      <tr><td>aura doctor</td><td>Health check — bloat, stale, secrets</td></tr>
-      <tr><td>aura audit</td><td>Scan for leaked API keys and tokens</td></tr>
-      <tr><td>aura audit --fix</td><td>Auto-redact critical secrets</td></tr>
-      <tr><td>aura consolidate</td><td>Merge duplicates, find contradictions</td></tr>
-      <tr><td>aura decay</td><td>Remove expired facts (type-aware TTL)</td></tr>
-      <tr><td>aura export -f &lt;fmt&gt;</td><td>Export to any format</td></tr>
-      <tr><td>aura import -s &lt;src&gt;</td><td>Import from ChatGPT / Claude</td></tr>
-      <tr><td>aura diff &lt;a&gt; &lt;b&gt;</td><td>Compare two packs</td></tr>
-    </table>
-  </section>
-
-  <section>
-    <h2>Security</h2>
+    <div class="section-label">Security</div>
+    <div class="security-list">
+      <div class="sec-item"><div class="sec-dot"></div><div><div class="sec-title">Localhost binding</div><div class="sec-desc">Binds to 127.0.0.1 only &mdash; not reachable from the network.</div></div></div>
+      <div class="sec-item"><div class="sec-dot"></div><div><div class="sec-title">Bearer token auth</div><div class="sec-desc">Optional <code style="color:var(--green)">--token</code> flag or <code style="color:var(--green)">AURA_TOKEN</code> env var. SSE clients can pass via query param.</div></div></div>
+      <div class="sec-item"><div class="sec-dot"></div><div><div class="sec-title">Scoped serving</div><div class="sec-desc"><code style="color:var(--green)">--packs</code> flag and per-agent permissions operate as two independent layers. Both must allow a pack for it to be served.</div></div></div>
+      <div class="sec-item"><div class="sec-dot"></div><div><div class="sec-title">Read-only mode</div><div class="sec-desc">AI tools read your context but can never write to it. <code style="color:var(--green)">--read-only</code>.</div></div></div>
+      <div class="sec-item"><div class="sec-dot"></div><div><div class="sec-title">Secret detection</div><div class="sec-desc">30+ patterns &mdash; AWS keys, GitHub tokens, OpenAI/Anthropic API keys, database URLs, private keys. Auto-redaction at serve time.</div></div></div>
+      <div class="sec-item"><div class="sec-dot"></div><div><div class="sec-title">No telemetry</div><div class="sec-desc">No analytics. No crash reports. No usage tracking. Your YAML never leaves your machine unless you choose otherwise.</div></div></div>
+    </div>
     <div class="terminal">
-      <span class="comment"># Basic — localhost only</span><br>
-      <span class="prompt">$</span> aura serve<br><br>
-      <span class="comment"># Full lockdown</span><br>
-      <span class="prompt">$</span> aura serve <span class="flag">--token</span> s3cret <span class="flag">--packs</span> developer <span class="flag">--read-only</span> <span class="flag">--watch</span>
+      <div class="terminal-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="terminal-body">
+        <span class="c"># Basic &mdash; localhost only</span><br>
+        <span class="p">$</span> aura serve<br><br>
+        <span class="c"># Locked down</span><br>
+        <span class="p">$</span> aura serve <span class="f">--token</span> s3cret <span class="f">--packs</span> developer <span class="f">--read-only</span>
+      </div>
     </div>
-    <p>Binds to 127.0.0.1 only. Optional Bearer token auth. Scoped pack serving. Read-only mode. Secret scanning with auto-redaction at serve time. No telemetry. No analytics. No cloud.</p>
   </section>
 
-  <section style="text-align:center;padding:64px 0">
-    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:24px">7,800+ lines · 151 tests · 22 commands · 14 templates · MIT</p>
-    <div class="terminal" style="display:inline-block;text-align:left">
-      <span class="prompt">$</span> pip install aura-ctx<br>
-      <span class="prompt">$</span> aura quickstart
+  <div class="cta-block">
+    <p>9,200+ lines &middot; 368 tests &middot; 27 commands &middot; 14 templates &middot; MIT license</p>
+    <div class="install-box" style="display:inline-flex" onclick="navigator.clipboard.writeText('pip install aura-ctx && aura quickstart').then(()=>{const h=this.querySelector('.install-hint');h.textContent='copied!';setTimeout(()=>h.textContent='click to copy',1800)})">
+      <span class="install-cmd">pip install aura-ctx &amp;&amp; aura quickstart</span>
+      <span class="install-hint">click to copy</span>
     </div>
-    <p style="margin-top:16px"><a href="https://github.com/WozGeek/aura-ctx">GitHub</a> · <a href="https://pypi.org/project/aura-ctx/">PyPI</a> · <a href="https://github.com/WozGeek/aura-ctx/blob/main/CONTRIBUTING.md">Contribute</a></p>
-  </section>
+    <div class="cta-links">
+      <a href="https://github.com/WozGeek/aura-ctx">GitHub</a>
+      <a href="https://pypi.org/project/aura-ctx/">PyPI</a>
+      <a href="https://github.com/WozGeek/aura-ctx/blob/main/CONTRIBUTING.md">Contribute</a>
+      <a href="https://github.com/WozGeek/aura-ctx/releases">Releases</a>
+    </div>
+  </div>
 
 </div>
 
 <footer>
   <div class="container">
-    <p>aura is open-source · <a href="https://github.com/WozGeek/aura-ctx">MIT License</a> · © <a href="https://github.com/WozGeek">Enoch Afanwoubo</a></p>
+    <p>aura is open-source &middot; <a href="https://github.com/WozGeek/aura-ctx/blob/main/LICENSE">MIT License</a> &middot; &copy; <a href="https://github.com/WozGeek">Enoch Afanwoubo</a></p>
   </div>
 </footer>
 

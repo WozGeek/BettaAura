@@ -1,0 +1,22 @@
+<svg width="680" height="260" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>The three layers of AI context: Memory, Context Engineering, and Identity</title>
+  <desc>A diagram showing three horizontal layers. Memory at the bottom handles past conversations. Context Engineering in the middle handles what the AI should know now. Identity at the top, highlighted in blue, is where aura lives — defining who you are across all tools.</desc>
+
+  <rect width="680" height="260" fill="#ffffff"/>
+
+  <rect x="40" y="168" width="600" height="68" rx="6" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="68" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#555555">Memory</text>
+  <text x="68" y="216" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#888888">What happened in past conversations — Mem0, Zep, DeltaMemory</text>
+
+  <rect x="40" y="88" width="600" height="68" rx="6" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="68" y="116" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#555555">Context engineering</text>
+  <text x="68" y="136" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#888888">What the AI should know right now — LACP, Claudesidian, OpenClaw</text>
+
+  <rect x="40" y="8" width="600" height="68" rx="6" fill="#EBF4FF" stroke="#378ADD" stroke-width="1.5"/>
+  <rect x="40" y="8" width="6" height="68" rx="3" fill="#378ADD"/>
+  <text x="68" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#185FA5">Identity</text>
+  <text x="68" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#378ADD">Who you are, across everything — your stack, style, rules, role</text>
+
+  <rect x="530" y="18" width="100" height="28" rx="14" fill="#378ADD"/>
+  <text x="580" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">✦ aura</text>
+</svg>

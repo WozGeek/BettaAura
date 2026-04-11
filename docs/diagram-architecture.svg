@@ -1,0 +1,76 @@
+<svg width="680" height="340" viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>aura architecture: from user to AI tools via context packs and MCP server</title>
+  <desc>A flow diagram showing how aura works. The user runs aura scan, onboard, and import to generate YAML context packs stored locally. The packs feed into an MCP server running on localhost:3847. The server serves identity to eight AI tools: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, Gemini CLI, Codex CLI, and ChatGPT Desktop.</desc>
+
+  <rect width="680" height="340" fill="#ffffff"/>
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#AAAAAA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect x="20" y="20" width="140" height="90" rx="8" fill="#F9F9F9" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="90" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#333333" text-anchor="middle">You</text>
+  <text x="90" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#888888" text-anchor="middle">aura scan</text>
+  <text x="90" y="84" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#888888" text-anchor="middle">aura onboard</text>
+  <text x="90" y="98" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#888888" text-anchor="middle">aura import</text>
+
+  <line x1="160" y1="65" x2="196" y2="65" stroke="#AAAAAA" stroke-width="1" marker-end="url(#arr)"/>
+
+  <rect x="198" y="20" width="150" height="90" rx="8" fill="#F9F9F9" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="273" y="48" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#333333" text-anchor="middle">Context packs</text>
+  <text x="273" y="68" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#888888" text-anchor="middle">~/.aura/packs/</text>
+  <text x="273" y="82" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#888888" text-anchor="middle">developer.yaml</text>
+  <text x="273" y="96" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#888888" text-anchor="middle">writer.yaml · work.yaml</text>
+
+  <line x1="348" y1="65" x2="384" y2="65" stroke="#AAAAAA" stroke-width="1" marker-end="url(#arr)"/>
+
+  <rect x="386" y="10" width="148" height="110" rx="8" fill="#EBF4FF" stroke="#378ADD" stroke-width="1.5"/>
+  <text x="460" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#185FA5" text-anchor="middle">MCP server</text>
+  <text x="460" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#378ADD" text-anchor="middle">localhost:3847</text>
+  <text x="460" y="74" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#555555" text-anchor="middle">Auto-loads identity</text>
+  <text x="460" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#555555" text-anchor="middle">at conversation start</text>
+  <text x="460" y="106" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#378ADD" text-anchor="middle">✦ aura serve</text>
+
+  <line x1="534" y1="45" x2="570" y2="45" stroke="#378ADD" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr-blue)"/>
+  <line x1="534" y1="65" x2="570" y2="65" stroke="#378ADD" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr-blue)"/>
+  <line x1="534" y1="85" x2="570" y2="85" stroke="#378ADD" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr-blue)"/>
+  <line x1="534" y1="105" x2="570" y2="105" stroke="#378ADD" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arr-blue)"/>
+
+  <rect x="572" y="25" width="100" height="22" rx="4" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="622" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#444444" text-anchor="middle">Claude Desktop</text>
+
+  <rect x="572" y="52" width="100" height="22" rx="4" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="622" y="67" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#444444" text-anchor="middle">Claude Code</text>
+
+  <rect x="572" y="79" width="100" height="22" rx="4" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="622" y="94" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#444444" text-anchor="middle">Cursor / Windsurf</text>
+
+  <rect x="572" y="106" width="100" height="22" rx="4" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="622" y="121" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#444444" text-anchor="middle">Gemini / Codex</text>
+
+  <line x1="340" y1="150" x2="340" y2="155" stroke="#DDDDDD" stroke-width="1"/>
+  <line x1="40" y1="165" x2="640" y2="165" stroke="#EEEEEE" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="20" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#AAAAAA">THREE-LEVEL DELIVERY</text>
+
+  <rect x="20" y="200" width="196" height="52" rx="6" fill="#EBF4FF" stroke="#378ADD" stroke-width="1"/>
+  <text x="118" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#185FA5" text-anchor="middle">Level 1 — Identity card</text>
+  <text x="118" y="238" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#378ADD" text-anchor="middle">~50 tokens · auto at start</text>
+
+  <rect x="242" y="200" width="196" height="52" rx="6" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="340" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#444444" text-anchor="middle">Level 2 — User profile</text>
+  <text x="340" y="238" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#888888" text-anchor="middle">~500 tokens · on demand</text>
+
+  <rect x="464" y="200" width="196" height="52" rx="6" fill="#F5F5F5" stroke="#DDDDDD" stroke-width="1"/>
+  <text x="562" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#444444" text-anchor="middle">Level 3 — Full context</text>
+  <text x="562" y="238" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#888888" text-anchor="middle">~1000+ tokens · explicit</text>
+
+  <text x="340" y="285" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#AAAAAA" text-anchor="middle">Most conversations never go beyond Level 1.</text>
+
+  <text x="340" y="318" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#CCCCCC" text-anchor="middle">100% local · no cloud · no telemetry · MIT license</text>
+</svg>
